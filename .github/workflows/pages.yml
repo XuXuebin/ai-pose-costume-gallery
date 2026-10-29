@@ -9,6 +9,8 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  # configure-pages 的 enablement 需要它来自动开启 Pages
+  administration: write
 
 concurrency:
   group: pages
@@ -26,6 +28,9 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          # 仓库还没开 Pages 时自动开启（build_type = workflow）
+          enablement: true
 
       - name: Verify assets
         run: python3 tools/verify.py
