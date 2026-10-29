@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="description" content="POSE-DB-01 × COSTUME-DB-01 统一工作台：挑选姿势与服装，配置浏览器端生图 API，一键生成并保存参考图。">
+<title>姿势 × 服装 生成工作台 · POSE-DB-01 × COSTUME-DB-01</title>
+<link rel="stylesheet" href="studio/studio.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true">◈</span>
+    <span class="brandtext">
+      <b data-i18n="brand.sub">POSE-DB-01 × COSTUME-DB-01 · 生成工作台</b>
+    </span>
+  </div>
+  <nav class="nav">
+    <a href="#studio" class="on" data-i18n="nav.studio">工作台</a>
+    <a href="galleries/pose/" data-i18n="nav.pose">姿势库</a>
+    <a href="galleries/costume/" data-i18n="nav.costume">服装库</a>
+  </nav>
+  <div class="lang" role="group" aria-label="language">
+    <button type="button" data-lang="zh">中</button>
+    <button type="button" data-lang="en">EN</button>
+    <button type="button" data-lang="ja">日</button>
+  </div>
+</header>
+
+<section class="hero">
+  <h1 data-i18n="hero.title">选姿势 · 选服装 · 一键生成</h1>
+  <p class="lead" data-i18n="hero.lead"></p>
+  <ul class="hero-badges">
+    <li data-i18n="hero.b1"></li>
+    <li data-i18n="hero.b2"></li>
+    <li data-i18n="hero.b3"></li>
+  </ul>
+  <div class="hero-cta">
+    <a class="btn primary" href="#studio" data-i18n="hero.cta"></a>
+    <a class="btn" href="galleries/pose/" data-i18n="hero.cta2"></a>
+  </div>
+</section>
+
+<main id="studio" class="studio">
+
+  <!-- ① 姿势 -->
+  <section class="pane" id="panePose">
+    <header class="pane-hd">
+      <h2 data-i18n="pick.pose">① 选择姿势</h2>
+      <button class="linkbtn" type="button" data-clear="pose" data-i18n="pick.clear">清除选择</button>
+    </header>
+    <p class="pane-hint" data-i18n="pick.poseHint"></p>
+    <div class="filters">
+      <input class="search" type="search" id="poseSearch" data-i18n-ph="pick.search" placeholder="搜索 ID / 名称 / 关键词" autocomplete="off">
+      <select id="poseSeries" aria-label="series"></select>
+      <select id="poseAngle" aria-label="angle"></select>
+    </div>
+    <div class="picked" id="posePicked"></div>
+    <div class="picker" id="poseGrid" role="listbox" aria-label="pose list"></div>
+    <div class="picker-foot"><button class="btn more" type="button" data-more="pose" data-i18n="pick.more">显示更多</button></div>
+  </section>
+
+  <!-- ② 服装 -->
+  <section class="pane" id="paneCostume">
+    <header class="pane-hd">
+      <h2 data-i18n="pick.costume">② 选择服装</h2>
+      <button class="linkbtn" type="button" data-clear="costume" data-i18n="pick.clear">清除选择</button>
+    </header>
+    <p class="pane-hint" data-i18n="pick.costumeHint"></p>
+    <div class="filters">
+      <input class="search" type="search" id="costumeSearch" data-i18n-ph="pick.search" placeholder="搜索 ID / 名称 / 关键词" autocomplete="off">
+      <select id="costumeCat" aria-label="category"></select>
+    </div>
+    <div class="picked" id="costumePicked"></div>
+    <div class="picker" id="costumeGrid" role="listbox" aria-label="costume list"></div>
+    <div class="picker-foot"><button class="btn more" type="button" data-more="costume" data-i18n="pick.more">显示更多</button></div>
+  </section>
+
+  <!-- ③ 生成 -->
+  <section class="pane pane-ctrl" id="paneCtrl">
+    <header class="pane-hd">
+      <h2 data-i18n="gen.title">③ 生成设置</h2>
+    </header>
+
+    <div class="field">
+      <label for="provider" data-i18n="gen.provider">生图接口</label>
+      <select id="provider"></select>
+      <p class="note" id="providerNote"></p>
+    </div>
+
+    <div class="field">
+      <label for="endpoint" data-i18n="gen.endpoint">接口地址</label>
+      <input type="text" id="endpoint" spellcheck="false">
+    </div>
+
+    <div class="field" id="keyField">
+      <label for="apikey" data-i18n="gen.key">API Key</label>
+      <input type="password" id="apikey" spellcheck="false" autocomplete="off" placeholder="sk-…">
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="model" data-i18n="gen.model">模型</label>
+        <input type="text" id="model" list="modelList" spellcheck="false">
+        <datalist id="modelList"></datalist>
+      </div>
+      <div class="field">
+        <label for="sizeSel" data-i18n="gen.size">尺寸</label>
+        <select id="sizeSel">
+          <option value="512x512">512 × 512</option>
+          <option value="768x1024">768 × 1024</option>
+          <option value="832x1216">832 × 1216</option>
+          <option value="1024x1024" selected>1024 × 1024</option>
+          <option value="1024x1536">1024 × 1536</option>
+          <option value="1536x1024">1536 × 1024</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="seed" data-i18n="gen.seed">随机种子</label>
+        <input type="number" id="seed" value="42" min="0" max="999999999">
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button class="btn" type="button" id="reseed" data-i18n="pick.changed">换一个</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="prompt" data-i18n="gen.prompt">提示词</label>
+      <textarea id="prompt" rows="4" spellcheck="false"></textarea>
+      <div class="row-btns">
+        <button class="btn sm" type="button" id="autoPrompt" data-i18n="gen.auto">自动生成</button>
+        <button class="btn sm" type="button" id="copyPrompt" data-i18n="gen.copyPrompt">复制提示词</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="negprompt" data-i18n="gen.neg">负面提示词</label>
+      <input type="text" id="negprompt" spellcheck="false">
+    </div>
+
+    <div class="field">
+      <label data-i18n="gen.refs">附加参考图</label>
+      <div class="refs" id="refsBox">
+        <div class="refs-empty" data-i18n="gen.refsEmpty">未添加参考图</div>
+      </div>
+      <div class="row-btns">
+        <button class="btn sm" type="button" id="addRef" data-i18n="gen.refsAdd">添加参考图</button>
+        <span class="hint" data-i18n="gen.refsHint"></span>
+      </div>
+      <input type="file" id="refInput" accept="image/*" multiple hidden>
+    </div>
+
+    <button class="btn primary big" type="button" id="runBtn" data-i18n="gen.run">生成图片</button>
+    <p class="note warn" data-i18n="gen.local"></p>
+
+    <div class="result" id="result">
+      <div class="result-empty" data-i18n="gen.empty">还没有生成结果</div>
+    </div>
+  </section>
+</main>
+
+<section class="gallery" id="gallery">
+  <header class="gal-hd">
+    <h2 data-i18n="gal.title">我的图库</h2>
+    <span class="gal-count" id="galCount"></span>
+    <button class="linkbtn" type="button" id="galClear" data-i18n="gal.clear">清空图库</button>
+  </header>
+  <p class="note" data-i18n="gal.stored"></p>
+  <div class="gal-grid" id="galGrid"></div>
+</section>
+
+<footer class="foot">
+  <p>
+    <span data-i18n="foot.origin"></span>：
+    <a href="https://x.com/giaaibusi" target="_blank" rel="noopener noreferrer">ギア (@giaaibusi)</a>
+    ·
+    <span data-i18n="foot.originRepo"></span>：
+    <a href="https://ai-pose-gallery.pages.dev/" target="_blank" rel="noopener noreferrer">ai-pose-gallery</a>
+    ·
+    <a href="https://ai-costume-gallery.pages.dev/" target="_blank" rel="noopener noreferrer">ai-costume-gallery</a>
+  </p>
+  <p class="note" data-i18n="foot.lic"></p>
+</footer>
+
+<script src="studio/i18n.js"></script>
+<script src="studio/generator.js"></script>
+<script src="studio/studio.js"></script>
+</body>
+</html>

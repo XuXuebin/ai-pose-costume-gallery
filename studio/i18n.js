@@ -1,0 +1,169 @@
+/* Studio 三语文案（中文 / English / 日本語） */
+const I18N = {
+  zh: {
+    "nav.studio": "工作台", "nav.pose": "姿势库", "nav.costume": "服装库",
+    "brand.sub": "POSE-DB-01 × COSTUME-DB-01 · 生成工作台",
+    "hero.title": "选姿势 · 选服装 · 一键生成",
+    "hero.lead": "从姿势库挑选人体姿态，从服装库挑选服装搭配，在浏览器里直接调用生图 API 生成参考图。生成结果自动保存到本地图库。",
+    "hero.b1": "姿势库 1,439 张 · 服装库 1,407 套",
+    "hero.b2": "浏览器直连，支持 Pollinations 免密钥与自建接口",
+    "hero.b3": "生成结果保存在浏览器本地，可随时下载",
+    "hero.cta": "开始创作", "hero.cta2": "浏览姿势库",
+
+    "pick.pose": "① 选择姿势", "pick.costume": "② 选择服装",
+    "pick.poseHint": "灰色人偶线稿，仅作姿态与构图参考。",
+    "pick.costumeHint": "不含人物的纯服装图，仅作服装参考。",
+    "pick.search": "搜索 ID / 名称 / 关键词",
+    "pick.all": "全部", "pick.clear": "清除选择", "pick.changed": "换一个",
+    "pick.series": "系列", "pick.angle": "角度", "pick.cat": "分类",
+    "pick.none": "尚未选择", "pick.loading": "加载中…",
+    "pick.more": "显示更多", "pick.empty": "没有匹配的结果",
+    "pick.result": "共 %d 个结果",
+
+    "sel.pose": "已选姿势", "sel.costume": "已选服装", "sel.none": "未选择",
+    "sel.poseName": "姿势名", "sel.costumeKw": "服装关键词",
+
+    "gen.title": "③ 生成设置",
+    "gen.provider": "生图接口", "gen.endpoint": "接口地址", "gen.key": "API Key",
+    "gen.model": "模型", "gen.size": "尺寸", "gen.seed": "随机种子",
+    "gen.neg": "负面提示词", "gen.prompt": "提示词", "gen.auto": "自动生成",
+    "gen.run": "生成图片", "gen.running": "生成中…", "gen.empty": "还没有生成结果",
+    "gen.download": "下载 PNG", "gen.save": "已存入图库", "gen.resolved": "解析地址",
+    "gen.copyPrompt": "复制提示词", "gen.regen": "换一张",
+    "gen.refs": "附加参考图", "gen.refsHint": "拖入或选择本地图片（仅部分接口支持图生图）",
+    "gen.refsAdd": "添加参考图", "gen.refsEmpty": "未添加参考图",
+    "gen.err": "生成失败", "gen.timeout": "请求超时",
+    "gen.local": "接口地址将保存在浏览器本地（localStorage），请勿在公用设备上保存密钥。",
+    "gen.pollenNote": "Pollinations 免密钥，浏览器直连即可使用；生成内容由第三方服务提供。",
+    "gen.openaiNote": "OpenAI 兼容接口需要 Key，且多数服务商未开放 CORS；如遇跨域错误，请在接口地址处填写自己的代理地址。",
+    "gen.customNote": "自定义地址支持 {prompt} {width} {height} {seed} {model} 占位符。",
+
+    "gal.title": "我的图库", "gal.count": "共 %d 张", "gal.empty": "图库还是空的，先生成一张吧。",
+    "gal.del": "删除", "gal.dl": "下载", "gal.use": "复用提示词", "gal.clear": "清空图库",
+    "gal.saved": "已保存到图库", "gal.stored": "保存在本浏览器中（IndexedDB），不会上传。",
+
+    "foot.origin": "原始作者",
+    "foot.originRepo": "原始仓库",
+    "foot.lic": "素材遵循原站条款，仅供个人学习与创作参考。",
+    "foot.langNote": "界面语言",
+    "err.load": "数据加载失败，请通过 HTTP 服务打开本页面（不能用 file:// 直接打开）。",
+    "err.noSel": "请先选择至少一个姿势或服装。",
+    "err.noKey": "该接口需要 API Key。",
+  },
+  en: {
+    "nav.studio": "Studio", "nav.pose": "Pose Library", "nav.costume": "Costume Library",
+    "brand.sub": "POSE-DB-01 × COSTUME-DB-01 · Generation Studio",
+    "hero.title": "Pick a pose · Pick a costume · Generate",
+    "hero.lead": "Choose a body pose from the pose library and an outfit from the costume library, then call an image-generation API straight from the browser. Results are saved to your local gallery automatically.",
+    "hero.b1": "1,439 poses · 1,407 costumes",
+    "hero.b2": "Runs in-browser: keyless Pollinations or your own endpoint",
+    "hero.b3": "Results stay in your browser and can be downloaded anytime",
+    "hero.cta": "Start creating", "hero.cta2": "Browse the pose library",
+
+    "pick.pose": "① Pick a pose", "pick.costume": "② Pick a costume",
+    "pick.poseHint": "Grey mannequin line art — for pose and composition only.",
+    "pick.costumeHint": "Outfit-only photos with no person — for costume reference only.",
+    "pick.search": "Search ID / name / keyword",
+    "pick.all": "All", "pick.clear": "Clear", "pick.changed": "Change",
+    "pick.series": "Series", "pick.angle": "Angle", "pick.cat": "Category",
+    "pick.none": "Not selected", "pick.loading": "Loading…",
+    "pick.more": "Show more", "pick.empty": "No matching results",
+    "pick.result": "%d results",
+
+    "sel.pose": "Selected pose", "sel.costume": "Selected costume", "sel.none": "None",
+    "sel.poseName": "Pose", "sel.costumeKw": "Keywords",
+
+    "gen.title": "③ Generation settings",
+    "gen.provider": "Provider", "gen.endpoint": "Endpoint", "gen.key": "API Key",
+    "gen.model": "Model", "gen.size": "Size", "gen.seed": "Seed",
+    "gen.neg": "Negative prompt", "gen.prompt": "Prompt", "gen.auto": "Rebuild",
+    "gen.run": "Generate image", "gen.running": "Generating…", "gen.empty": "No result yet",
+    "gen.download": "Download PNG", "gen.save": "Saved to gallery", "gen.resolved": "Resolve URL",
+    "gen.copyPrompt": "Copy prompt", "gen.regen": "Another one",
+    "gen.refs": "Extra reference images", "gen.refsHint": "Drop or choose local images (only some providers accept image input)",
+    "gen.refsAdd": "Add reference", "gen.refsEmpty": "No reference images",
+    "gen.err": "Generation failed", "gen.timeout": "Request timed out",
+    "gen.local": "Endpoint and key are stored in this browser (localStorage). Avoid saving keys on shared devices.",
+    "gen.pollenNote": "Pollinations needs no key and works directly from the browser; images are produced by a third-party service.",
+    "gen.openaiNote": "OpenAI-compatible APIs need a key and most providers do not allow CORS. If you hit a CORS error, point the endpoint field at your own proxy.",
+    "gen.customNote": "The custom URL supports {prompt} {width} {height} {seed} {model} placeholders.",
+
+    "gal.title": "My gallery", "gal.count": "%d images", "gal.empty": "Your gallery is empty — generate something first.",
+    "gal.del": "Delete", "gal.dl": "Download", "gal.use": "Reuse prompt", "gal.clear": "Clear gallery",
+    "gal.saved": "Saved to gallery", "gal.stored": "Stored in this browser (IndexedDB); nothing is uploaded.",
+
+    "foot.origin": "Original author",
+    "foot.originRepo": "Original site",
+    "foot.lic": "Assets follow the original site's terms; personal study and creative reference only.",
+    "foot.langNote": "Interface language",
+    "err.load": "Failed to load data. Please open this page over HTTP (file:// will not work).",
+    "err.noSel": "Pick at least one pose or costume first.",
+    "err.noKey": "This provider requires an API key.",
+  },
+  ja: {
+    "nav.studio": "スタジオ", "nav.pose": "ポーズ集", "nav.costume": "衣装集",
+    "brand.sub": "POSE-DB-01 × COSTUME-DB-01 ・生成スタジオ",
+    "hero.title": "ポーズ選び · 衣装選び · 一括生成",
+    "hero.lead": "ポーズ集から姿勢、衣装集から服装を選び、ブラウザから画像生成 API を直接呼び出して生成します。生成画像は自動でローカルギャラリーに保存されます。",
+    "hero.b1": "ポーズ 1,439 点 ・ 衣装 1,407 セット",
+    "hero.b2": "ブラウザ直呼び出し。Pollinations はキー不要、自前 API にも対応",
+    "hero.b3": "生成画像はブラウザ内に保存され、いつでもダウンロード可能",
+    "hero.cta": "制作をはじめる", "hero.cta2": "ポーズ集を見る",
+
+    "pick.pose": "① ポーズを選ぶ", "pick.costume": "② 衣装を選ぶ",
+    "pick.poseHint": "グレーの人形線画。姿勢と構図の参考用です。",
+    "pick.costumeHint": "人物の入っていない衣装画像。服装の参考用です。",
+    "pick.search": "ID / 名称 / キーワードで検索",
+    "pick.all": "すべて", "pick.clear": "選択解除", "pick.changed": "変更",
+    "pick.series": "シリーズ", "pick.angle": "アングル", "pick.cat": "カテゴリ",
+    "pick.none": "未選択", "pick.loading": "読み込み中…",
+    "pick.more": "もっと見る", "pick.empty": "該当する結果がありません",
+    "pick.result": "%d 件",
+    "sel.pose": "選択中のポーズ", "sel.costume": "選択中の衣装", "sel.none": "未選択",
+    "sel.poseName": "ポーズ名", "sel.costumeKw": "キーワード",
+
+    "gen.title": "③ 生成設定",
+    "gen.provider": "生成 API", "gen.endpoint": "エンドポイント", "gen.key": "API キー",
+    "gen.model": "モデル", "gen.size": "サイズ", "gen.seed": "シード",
+    "gen.neg": "ネガティブプロンプト", "gen.prompt": "プロンプト", "gen.auto": "自動作成",
+    "gen.run": "画像を生成", "gen.running": "生成中…", "gen.empty": "まだ結果がありません",
+    "gen.download": "PNG を保存", "gen.save": "ギャラリーに保存済み", "gen.resolved": "URL 解決",
+    "gen.copyPrompt": "プロンプトをコピー", "gen.regen": "もう一枚",
+    "gen.refs": "追加の参考画像", "gen.refsHint": "ドロップまたは選択（画像入力に対応した API のみ反映）",
+    "gen.refsAdd": "参考画像を追加", "gen.refsEmpty": "参考画像なし",
+    "gen.err": "生成に失敗しました", "gen.timeout": "リクエストがタイムアウトしました",
+    "gen.local": "エンドポイントとキーはブラウザ内（localStorage）に保存されます。共用端末では保存しないでください。",
+    "gen.pollenNote": "Pollinations はキー不要でブラウザから直接利用できます。画像は第三者サービスが生成します。",
+    "gen.openaiNote": "OpenAI 互換 API はキーが必要で、多くのサービスは CORS に対応していません。CORS エラーが出る場合はエンドポイントに自前のプロキシを指定してください。",
+    "gen.customNote": "カスタム URL では {prompt} {width} {height} {seed} {model} のプレースホルダが使えます。",
+
+    "gal.title": "マイギャラリー", "gal.count": "%d 枚", "gal.empty": "ギャラリーは空です。まず生成してみましょう。",
+    "gal.del": "削除", "gal.dl": "保存", "gal.use": "プロンプトを再利用", "gal.clear": "すべて削除",
+    "gal.saved": "ギャラリーに保存しました", "gal.stored": "このブラウザ内（IndexedDB）に保存され、送信されません。",
+
+    "foot.origin": "原著者",
+    "foot.originRepo": "原サイト",
+    "foot.lic": "素材は原サイトの条件に従います。个人学習・創作の参考用途に限ってご利用ください。",
+    "foot.langNote": "表示言語",
+    "err.load": "データの読み込みに失敗しました。HTTP サーバー経由で開いてください（file:// では動作しません）。",
+    "err.noSel": "まずポーズまたは衣装を選んでください。",
+    "err.noKey": "この API にはキーが必要です。",
+  },
+};
+
+function t(key, lang) {
+  const L = I18N[lang] || I18N.zh;
+  return L[key] != null ? L[key] : (I18N.zh[key] != null ? I18N.zh[key] : key);
+}
+function applyI18n(lang) {
+  document.documentElement.lang = lang === "zh" ? "zh-CN" : lang;
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    el.textContent = t(el.dataset.i18n, lang);
+  });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => {
+    el.placeholder = t(el.dataset.i18nPh, lang);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach(el => {
+    el.title = t(el.dataset.i18nTitle, lang);
+  });
+}

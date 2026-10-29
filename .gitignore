@@ -1,0 +1,9 @@
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+# 本地抓取的原始素材（体积大，默认不入库）
+originals/
+*.part
+# 生成的临时文件
+_printproof.html

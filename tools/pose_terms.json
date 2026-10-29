@@ -1,0 +1,44 @@
+{
+  "_note": "姿势术语英译表：把中文分类/角度/系列映射为图像模型能理解的英文描述性短语。",
+  "系列": {
+    "全身单人 · 性感系": "full-body single subject, glamorous style",
+    "全身单人 · 标准系": "full-body single subject, standard style",
+    "上半身单人": "upper-body single subject",
+    "双人缠绕": "two people intertwined"
+  },
+  "角度": {
+    "正面": "front view",
+    "俯拍": "high angle view from above",
+    "仰拍": "low angle view from below",
+    "侧面": "side view",
+    "斜角": "three-quarter view"
+  },
+  "分类": {
+    "站姿": "standing pose",
+    "坐姿": "sitting pose",
+    "跪姿": "kneeling pose",
+    "跪姿 · 四肢着地": "on all fours pose",
+    "躺卧": "lying down pose",
+    "侧坐 · 女式坐": "side sitting pose",
+    "蹲姿": "crouching pose",
+    "前倾": "leaning forward pose",
+    "挺胸后仰系": "arched back pose",
+    "扭腰系": "twisting waist pose",
+    "可爱系": "cute playful pose",
+    "挤胸 · 强调乳沟系": "bust forward pose",
+    "性感 · 直白倾向系": "glamorous pose",
+    "特殊": "special pose",
+    "立位": "upright standing pose",
+    "贴脸系": "close-up face to face pose",
+    "正常位": "standard pose",
+    "后背位": "back to back pose",
+    "坐姿（座位）": "seated on chair pose",
+    "背面座位": "seated on chair viewed from behind",
+    "骑乘位": "riding pose",
+    "侧位": "side position pose",
+    "对坐": "facing each other pose",
+    "立位紧密": "standing close together pose",
+    "坐姿紧密": "sitting close together pose",
+    "紧密贴合": "closely embracing pose"
+  }
+}
