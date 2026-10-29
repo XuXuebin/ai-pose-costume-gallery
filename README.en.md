@@ -14,15 +14,16 @@ Pick a pose · Pick a costume · Configure an image API · Generate and save
 ## What is this
 
 Two Japanese AI-art reference libraries — the **pose library** and the **costume library** — merged
-into one place, plus a **unified studio**: choose a pose on the left, an outfit on the right,
-plug in any image-generation endpoint, hit generate, and the result is saved straight into a local
-gallery in your browser.
+into one place, plus a **unified studio**: choose a pose on the left, an outfit on the right, upload
+a photo of the character you want, then **all three images are sent to the image API together for
+image-to-image generation**. Hit generate and the result lands straight in a local gallery in your
+browser.
 
 | | Content | Count |
 |---|---|---|
 | 🧍 **Pose library** | Faceless grey mannequin line art (3:4), 5 angles per pose | 288 poses / **1,439 images** |
 | 👗 **Costume library** | Outfit-only photos with no person (2:3), 8 categories | **1,407 outfits** |
-| 🎨 **Unified studio** | Pose × costume × image API → generate and save | 3 providers |
+| 🎨 **Unified studio** | Pose reference + costume reference + person reference → img2img | 4 providers |
 
 Interface language: **Chinese / English / 日本語**, switchable at any time.
 
@@ -77,38 +78,64 @@ Cloudflare Pages / object storage / Nginx work too — there is no build step; t
 ## Using the studio
 
 ```
-① Pick a pose  →  ② Pick a costume  →  ③ Settings  →  Generate  →  Saved to gallery
+① Pick a pose  →  ② Pick a costume  →  ③ References + provider  →  Generate  →  Saved to gallery
 ```
 
 1. **Pose** — filter by series (4), angle (5) or category, or search by ID / pose name.
+   The mannequin line art you pick **becomes reference image 1 automatically**.
 2. **Costume** — filter by category (8), or search by ID / keyword (Chinese *and* English work).
-3. **Provider** — pick one of three image APIs and fill in the form; it works straight away.
-4. **Generate** — the image appears in place and can be downloaded as PNG. It is **also saved into
+   The outfit photo you pick **becomes reference image 2 automatically**.
+3. **Upload a person reference** — drop the character's face into the third slot (optional)
+   → **reference image 3**.
+4. **Provider** — pick one of four image APIs and fill in the form; it works straight away.
+5. **Generate** — the image appears in place and can be downloaded as PNG. It is **also saved into
    your local gallery** (IndexedDB), so it survives a page reload.
-5. **Gallery** — reuse a prompt, download, delete, or clear. Images live only in your own browser
+6. **Gallery** — reuse a prompt, download, delete, or clear. Images live only in your own browser
    and are **never uploaded**.
 
-### Three image providers
+### How the reference images reach the API
 
-| Provider | Key | Image input | Notes |
+The three images are sent **in slot order**, and the prompt refers to them as
+"Reference image 1 / 2 / 3":
+
+| Slot | Source | File actually sent | Purpose |
 |---|---|---|---|
-| **Pollinations** | none | ✗ | Default. Works directly from the browser; images are produced by a third-party service |
-| **OpenAI-compatible** | required | ✓ | Uses `/v1/images/generations`, or `/v1/images/edits` when reference images are attached. Most vendors do not allow CORS — if you hit a CORS error, point the endpoint field at your own proxy |
-| **Custom URL** | optional | ✗ | Any URL template, with `{prompt}` `{width}` `{height}` `{seed}` `{model}` `{negative}` placeholders |
+| 1 — pose | pose library | `原图` (900×1200 PNG) | posture, limbs, composition |
+| 2 — costume | costume library | `图像` (1366×2048 WebP) | clothing, colours, materials |
+| 3 — person | your upload | the original file | face, hairstyle, appearance |
+
+Both original galleries send `Access-Control-Allow-Origin: *`, so the browser can **fetch the image
+bytes cross-origin** and convert them into whatever the API needs (multipart files / base64) —
+without putting any image into this repository.
+
+### Four image providers
+
+| Provider | Key | Multi-reference | Notes |
+|---|---|---|---|
+| **Pollinations** | none | ✗ | Text-to-image only. Works directly from the browser; images are produced by a third-party service |
+| **OpenAI-compatible** | required | ✓ | `POST /v1/images/edits` — all three images go out as `image[]` in one multipart request. Most vendors do not allow CORS — if you hit a CORS error, point the endpoint field at your own proxy |
+| **Google Gemini** | required | ✓ | `generateContent` — the three images go out as base64 `inline_data` parts, several images per call |
+| **Custom URL** | optional | ✓ | `POST` JSON: `{prompt, images:[{role,name,data_url}], width, height, seed, model}` |
+
+If you pick a provider that cannot take reference images, the interface **explicitly warns** that
+only the text prompt will be used.
 
 Endpoint, key, model and seed are kept in browser `localStorage` and **never sent to a server**.
 On a shared machine, clear your site data afterwards.
 
 ### The prompt is assembled for you
 
-Once a pose and a costume are selected, the prompt is combined into English phrasing that image
-models actually understand:
+Once the references are set, the prompt is combined into English phrasing that image models
+actually understand:
 
 ```
-full-body single subject, glamorous style, standing pose, three-quarter view,
-wearing cream blouse ribbon ivory mini skirt shorts jacket beige tights,
-outfit: 奶油色 女式衬衫 蝴蝶结 象牙白 短款 半身裙 短裤 夹克 米色 连裤袜,
-full body character, fashion illustration, clean plain background, ...
+Outfit details: cream blouse ribbon ivory mini skirt shorts jacket beige tights.
+Reference image 1 is the POSE and body posture to reproduce exactly.
+Reference image 2 is the OUTFIT to put on the character, keep the same clothing, colors and materials.
+Reference image 3 is the CHARACTER: keep the same face, hairstyle and overall appearance.
+Generate a full-body character illustration that keeps the pose from the pose reference,
+the outfit from the costume reference, the face of the person reference.
+Single character, clean plain background, studio lighting, high quality, detailed fabric texture, natural proportions.
 ```
 
 Every Chinese pose term (category / angle / series) has an English counterpart in

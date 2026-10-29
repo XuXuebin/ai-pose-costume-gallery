@@ -14,13 +14,14 @@
 ## 这是什么
 
 把两个日文 AI 绘画参考图库——**姿势集**和**服装集**——整合到一处，并做了一个**统一工作台**：
-左边挑姿势、右边挑服装、右边配置生图接口，点一下就生成参考图，结果自动存进浏览器本地图库。
+左边挑姿势、右边挑服装，再上传一张人像参考图，**三张图一起喂给生图接口做图生图**，
+点一下就出成品，结果自动存进浏览器本地图库。
 
 | | 内容 | 数量 |
 |---|---|---|
 | 🧍 **姿势库** | 无面部灰色人偶线稿（3:4），每个姿势 5 个角度 | 288 组 / **1,439 张** |
 | 👗 **服装库** | 不含人物的纯服装图片（2:3），8 个分类 | **1,407 套** |
-| 🎨 **统一工作台** | 姿势 × 服装 × 生图 API → 生成并保存 | 3 种接口 |
+| 🎨 **统一工作台** | 姿势参考图 + 服装参考图 + 人像参考图 → 图生图 | 4 种接口 |
 
 界面语言：**中文 / English / 日本語** 三语可切换。
 
@@ -71,35 +72,57 @@ git push -u origin main
 ## 统一工作台怎么用
 
 ```
-① 选择姿势  →  ② 选择服装  →  ③ 生成设置  →  生成图片  →  自动进图库
+① 选择姿势  →  ② 选择服装  →  ③ 参考图 + 接口设置  →  生成  →  自动进图库
 ```
 
 1. **选姿势**：按系列（4 个）、角度（5 个）、分类筛选，或搜索 ID / 姿势名。
+   选中的那张人偶线稿会**自动成为参考图 1**。
 2. **选服装**：按分类（8 个）筛选，或搜索 ID / 关键词（中文英文都能搜）。
-3. **配接口**：三种生图 API 任选，界面填好即用。
-4. **点「生成图片」**：结果直接显示，可下载 PNG；**同时自动存入本地图库**（IndexedDB），刷新页面也不会丢。
-5. **图库**：可复用提示词、下载、删除、清空。图片只存在你自己的浏览器里，**不会上传**。
+   选中的那张服装图会**自动成为参考图 2**。
+3. **上传人像参考图**：把想要的人物长相的图片拖进第三个槽位（可留空）→ **参考图 3**。
+4. **配接口**：四种生图 API 任选，填好即用。
+5. **点「生成图片」**：结果直接显示，可下载 PNG；**同时自动存入本地图库**（IndexedDB），刷新页面也不会丢。
+6. **图库**：可复用提示词、下载、删除、清空。图片只存在你自己的浏览器里，**不会上传**。
 
-### 三种生图接口
+### 参考图怎么送进接口
 
-| 接口 | 密钥 | 图生图 | 说明 |
+三张参考图**按槽位顺序**送入接口，提示词里用「Reference image 1/2/3」指代它们：
+
+| 槽位 | 来源 | 送给接口的原始文件 | 作用 |
 |---|---|---|---|
-| **Pollinations** | 免密钥 | ✗ | 默认选项，浏览器直连即可用，生成内容由第三方服务提供 |
-| **OpenAI 兼容** | 需要 | ✓ | 走 `/v1/images/generations`，有参考图时走 `/v1/images/edits`；多数服务商不开 CORS，跨域报错时请在「接口地址」填自己的代理 |
-| **自定义地址** | 视情况 | ✗ | 任意 URL 模板，支持 `{prompt}` `{width}` `{height}` `{seed}` `{model}` `{negative}` 占位符 |
+| 1 姿势参考图 | 姿势库 | `原图`（900×1200 PNG） | 姿态、肢体、构图 |
+| 2 服装参考图 | 服装库 | `图像`（1366×2048 WebP） | 服装、配色、材质 |
+| 3 人像参考图 | 本地上传 | 原文件 | 人物长相、发型 |
+
+原站两个图库都带 `Access-Control-Allow-Origin: *`，所以浏览器能**跨域取到图片字节**
+并转成接口需要的格式（multipart 文件 / base64），不需要把图片塞进仓库。
+
+### 四种生图接口
+
+| 接口 | 密钥 | 多参考图 | 说明 |
+|---|---|---|---|
+| **Pollinations** | 免密钥 | ✗ | 仅文生图。浏览器直连即可用，生成内容由第三方服务提供 |
+| **OpenAI 兼容** | 需要 | ✓ | `POST /v1/images/edits`，三张图作为 `image[]` 一次性提交；多数服务商不开 CORS，跨域报错时请在「接口地址」填自己的代理 |
+| **Google Gemini** | 需要 | ✓ | `generateContent`，三张图作为 `inline_data` base64 提交，可一次多图 |
+| **自定义地址** | 视情况 | ✓ | `POST` JSON：`{prompt, images:[{role,name,data_url}], width, height, seed, model}` |
+
+选了不支持参考图的接口时，界面会**明确警告**「只会按提示词文字生成」。
 
 接口地址、密钥、模型、种子会保存在浏览器 `localStorage`，**不上传服务器**。
 公用设备请用完清掉（浏览器清除站点数据即可）。
 
 ### 提示词是自动拼的
 
-选中姿势和服装后，提示词会自动组合成模型看得懂的英文描述：
+选中参考图后，提示词会自动组合成模型看得懂的英文描述：
 
 ```
-full-body single subject, glamorous style, standing pose, three-quarter view,
-wearing cream blouse ribbon ivory mini skirt shorts jacket beige tights,
-outfit: 奶油色 女式衬衫 蝴蝶结 象牙白 短款 半身裙 短裤 夹克 米色 连裤袜,
-full body character, fashion illustration, clean plain background, ...
+Outfit details: cream blouse ribbon ivory mini skirt shorts jacket beige tights.
+Reference image 1 is the POSE and body posture to reproduce exactly.
+Reference image 2 is the OUTFIT to put on the character, keep the same clothing, colors and materials.
+Reference image 3 is the CHARACTER: keep the same face, hairstyle and overall appearance.
+Generate a full-body character illustration that keeps the pose from the pose reference,
+the outfit from the costume reference, the face of the person reference.
+Single character, clean plain background, studio lighting, high quality, detailed fabric texture, natural proportions.
 ```
 
 姿势的中文术语（分类 / 角度 / 系列）都有一份英译对照表（`tools/pose_terms.json`），

@@ -1,4 +1,4 @@
-/* 统一工作台：选姿势 / 选服装 / 配 API / 生成 / 存图库 */
+/* 统一工作台：选姿势 / 选服装 / 配参考图 / 配 API / 图生图 / 存图库 */
 (() => {
 "use strict";
 
@@ -6,6 +6,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const LS_KEY = "pcg.studio.config.v1";
+const SEL_KEY = "pcg.studio.sel.v1";
 const PAGE = 60;
 
 /* 素材地址：绝对地址（原站 CDN）原样使用，相对路径视为 galleries/ 下的本地文件 */
@@ -18,7 +19,7 @@ const state = {
   lang: localStorage.getItem("pcg.lang") || "zh",
   pose: [], costume: [],
   sel: { pose: null, costume: null },
-  refs: [],
+  person: null,                       // {file, name, url}
   view: {
     pose: { list: [], shown: 0 },
     costume: { list: [], shown: 0 },
@@ -39,7 +40,10 @@ function loadCfg() {
   try { return Object.assign(def, JSON.parse(localStorage.getItem(LS_KEY) || "{}")); }
   catch { return def; }
 }
-const SEL_KEY = "pcg.studio.sel.v1";
+function saveCfg() {
+  const { provider, endpoint, apiKey, model, seed, negative } = state.cfg;
+  localStorage.setItem(LS_KEY, JSON.stringify({ provider, endpoint, apiKey, model, seed, negative }));
+}
 function saveSel() {
   try {
     localStorage.setItem(SEL_KEY, JSON.stringify({
@@ -56,11 +60,6 @@ function restoreSel() {
   } catch {}
 }
 
-function saveCfg() {
-  const { provider, endpoint, apiKey, model, seed, negative } = state.cfg;
-  localStorage.setItem(LS_KEY, JSON.stringify({ provider, endpoint, apiKey, model, seed, negative }));
-}
-
 /* ============================================================ 语言 */
 function setLang(lang) {
   state.lang = lang;
@@ -70,7 +69,8 @@ function setLang(lang) {
   document.title = lang === "zh" ? "姿势 × 服装 生成工作台 · POSE-DB-01 × COSTUME-DB-01"
               : lang === "en" ? "Pose × Costume Studio · POSE-DB-01 × COSTUME-DB-01"
               : "ポーズ × 衣装 生成スタジオ · POSE-DB-01 × COSTUME-DB-01";
-  renderPose(); renderCostume(); renderPicked(); renderProviderNote(); renderGallery();
+  renderPose(); renderCostume(); renderPicked(); renderRefs();
+  renderProviders(); applyProvider(); renderGallery();
 }
 
 /* ============================================================ 数据 */
@@ -85,7 +85,7 @@ async function loadData() {
     state.costumeMeta = c.meta;
     buildFilters();
     restoreSel();
-    renderPose(); renderCostume(); renderPicked();
+    renderPose(); renderCostume(); renderPicked(); renderRefs();
   } catch (e) {
     $$(".picker").forEach(el => el.innerHTML = `<div class="empty">${esc(t("err.load", state.lang))}</div>`);
   }
@@ -123,8 +123,7 @@ function costumeList() {
 
 function renderPose() {
   const v = state.view.pose;
-  v.list = poseList();
-  v.shown = 0;
+  v.list = poseList(); v.shown = 0;
   const g = $("#poseGrid");
   g.innerHTML = "";
   if (!v.list.length) { g.innerHTML = `<div class="empty">${esc(t("pick.empty", state.lang))}</div>`; return; }
@@ -144,11 +143,10 @@ function appendPose() {
 }
 function renderCostume() {
   const v = state.view.costume;
-  v.list = costumeList();
-  v.shown = 0;
+  v.list = costumeList(); v.shown = 0;
   const g = $("#costumeGrid");
   g.innerHTML = "";
-  if (!v.list.length) { g.innerHTML = `<div class="empty">${esc(t("pick.empty", state.lang))}</div>`; }
+  if (!v.list.length) g.innerHTML = `<div class="empty">${esc(t("pick.empty", state.lang))}</div>`;
   else appendCostume();
 }
 function appendCostume() {
@@ -202,21 +200,103 @@ function renderPicked() {
   autoPrompt();
 }
 
+/* ============================================================ 参考图 */
+function buildReferences() {
+  const out = [];
+  const p = state.sel.pose, c = state.sel.costume;
+  if (p) out.push({ role: "pose", name: p.id, url: p["原图"], thumb: assetUrl(p["缩略图"]),
+                    label: `${p["姿势编号"]} · ${p["姿势名"]}`, from: "pose" });
+  if (c) out.push({ role: "costume", name: c.id, url: c["图像"], thumb: assetUrl(c["缩略图"]),
+                    label: `${c["id"]} · ${c["分类"]}`, from: "costume" });
+  if (state.person) out.push({ role: "person", name: state.person.name, file: state.person.file,
+                    thumb: state.person.url, label: state.person.name, from: "person" });
+  return out;
+}
+
+function renderRefs() {
+  const refs = buildReferences();
+  const slots = [
+    { key: "pose", no: 1, title: t("gen.slotPose", state.lang), from: t("gen.slotFrom", state.lang) },
+    { key: "costume", no: 2, title: t("gen.slotCostume", state.lang), from: t("gen.slotFromCostume", state.lang) },
+    { key: "person", no: 3, title: t("gen.slotPerson", state.lang), from: t("gen.slotFromUpload", state.lang) },
+  ];
+  const html = slots.map(sl => {
+    const r = refs.find(x => x.role === sl.key);
+    if (!r) {
+      if (sl.key === "person") {
+        return `<div class="slot slot-empty" data-slot="person">
+          <div class="slot-img slot-upload" id="personDrop">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+            <span>${esc(t("gen.slotUpload", state.lang))}</span>
+          </div>
+          <div class="slot-cap"><b>${sl.no}. ${esc(sl.title)}</b><span>${esc(t("gen.slotEmpty", state.lang))}</span></div>
+        </div>`;
+      }
+      return `<div class="slot slot-empty" data-slot="${sl.key}">
+        <div class="slot-img"><span class="slot-ph">${sl.no}</span></div>
+        <div class="slot-cap"><b>${sl.no}. ${esc(sl.title)}</b><span>${esc(t("gen.slotEmpty", state.lang))}</span></div>
+      </div>`;
+    }
+    const isPerson = sl.key === "person";
+    return `<div class="slot slot-filled" data-slot="${sl.key}">
+      <div class="slot-img"><img src="${esc(r.thumb)}" alt=""><span class="slot-no">${sl.no}</span>
+        ${isPerson ? `<button class="slot-x" type="button" data-refdel="person" title="remove">×</button>` : ""}</div>
+      <div class="slot-cap"><b>${sl.no}. ${esc(sl.title)}</b><span title="${esc(r.label)}">${esc(r.label)}</span></div>
+    </div>`;
+  }).join("");
+
+  $("#refSlots").innerHTML = html;
+  $("#refCount").textContent = refs.length
+    ? t("gen.refsCount", state.lang).replace("%d", refs.length) : "";
+  $("#personNote").textContent = t("gen.personNeeded", state.lang);
+
+  // 人像上传交互
+  const drop = $("#personDrop");
+  if (drop) {
+    drop.onclick = () => $("#personInput").click();
+    drop.ondragover = e => { e.preventDefault(); drop.classList.add("drag"); };
+    drop.ondragleave = () => drop.classList.remove("drag");
+    drop.ondrop = e => {
+      e.preventDefault(); drop.classList.remove("drag");
+      const f = [...e.dataTransfer.files].find(x => x.type.startsWith("image/"));
+      if (f) setPerson(f);
+    };
+  }
+}
+
+function setPerson(file) {
+  state.person = { file, name: file.name || "person.png", url: URL.createObjectURL(file) };
+  renderRefs();
+  autoPrompt();
+}
+
+/* ============================================================ 提示词 */
 const DEFAULT_NEGATIVE = "nudity, explicit, nsfw, text, watermark, logo, signature, deformed hands, extra limbs, bad anatomy, low quality";
 
 function autoPrompt() {
-  const p = state.sel.pose, c = state.sel.costume;
+  const refs = buildReferences();
+  const c = state.sel.costume;
+  const lines = [];
+  refs.forEach((r, i) => {
+    const n = i + 1;
+    if (r.role === "pose") lines.push(`Reference image ${n} is the POSE and body posture to reproduce exactly.`);
+    if (r.role === "costume") lines.push(`Reference image ${n} is the OUTFIT to put on the character, keep the same clothing, colors and materials.`);
+    if (r.role === "person") lines.push(`Reference image ${n} is the CHARACTER: keep the same face, hairstyle and overall appearance.`);
+  });
   const parts = [];
-  if (p) {
-    parts.push(p["系列EN"] || "full body single subject");
-    parts.push(`${p["分类EN"] || "pose"}, ${p["角度EN"] || "front view"}`);
+  if (c) parts.push(`Outfit details: ${c["关键词原文"]}.`);
+  parts.push(...lines);
+  const keep = [];
+  if (state.sel.pose) keep.push("the pose from the pose reference");
+  if (c) keep.push("the outfit from the costume reference");
+  if (state.person) keep.push("the face of the person reference");
+  if (keep.length) {
+    parts.push(`Generate a full-body character illustration that keeps ${keep.join(", ")}.`);
+  } else {
+    parts.push("Generate a full-body character illustration.");
   }
-  if (c) {
-    parts.push(`wearing ${c["关键词原文"]}`);
-    parts.push(`outfit: ${c["关键词"]}`);
-  }
-  parts.push("full body character, fashion illustration, clean plain background, studio lighting, high quality, detailed fabric texture");
-  const txt = parts.join(", ");
+  parts.push("Single character, clean plain background, studio lighting, high quality, detailed fabric texture, natural proportions.");
+  const txt = parts.join(" ");
   const box = $("#prompt");
   if (document.activeElement !== box) box.value = txt;
   state.lastPrompt = txt;
@@ -229,20 +309,28 @@ function renderProviders() {
     .map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join("");
   sel.value = state.cfg.provider;
 }
-function applyProvider(keep) {
+function applyProvider() {
   const p = PROVIDERS[state.cfg.provider];
+  if (!p) { state.cfg.provider = "pollinations"; }
+  const pp = PROVIDERS[state.cfg.provider];
   $("#provider").value = state.cfg.provider;
   $("#endpoint").value = state.cfg.endpoint;
   $("#apikey").value = state.cfg.apiKey;
   $("#model").value = state.cfg.model;
-  $("#modelList").innerHTML = p.models.map(m => `<option value="${esc(m)}">`).join("");
-  $("#keyField").hidden = !p.needsKey;
-  $("#providerNote").textContent = t(
-    state.cfg.provider === "pollinations" ? "gen.pollenNote" :
-    state.cfg.provider === "openai" ? "gen.openaiNote" : "gen.customNote", state.lang);
+  $("#modelList").innerHTML = pp.models.map(m => `<option value="${esc(m)}">`).join("");
+  $("#keyField").hidden = !pp.needsKey;
+  $("#providerNote").textContent = t(pp.noteKey, state.lang);
+  $("#img2imgTag").hidden = !pp.img2img;
   saveCfg();
+  updateRefWarn();
 }
-function renderProviderNote() { applyProvider(); }
+function updateRefWarn() {
+  const p = PROVIDERS[state.cfg.provider];
+  const refs = buildReferences();
+  const warn = $("#refWarn");
+  warn.hidden = !(refs.length && !p.img2img);
+  if (!warn.hidden) warn.textContent = t("gen.noRefWarn", state.lang);
+}
 
 /* ============================================================ 生成 */
 function cfgFromUI() {
@@ -256,13 +344,15 @@ function cfgFromUI() {
     negativePrompt: $("#negprompt").value.trim(),
     width: w, height: h,
     seed: Number($("#seed").value) || 0,
-    references: state.refs,
+    references: buildReferences(),
     referer: location.origin + location.pathname,
   };
 }
 
 async function run() {
-  if (!state.sel.pose && !state.sel.costume) { alert(t("err.noSel", state.lang)); return; }
+  if (!state.sel.pose && !state.sel.costume && !state.person) {
+    alert(t("err.noSel", state.lang)); return;
+  }
   const cfg = cfgFromUI();
   const p = PROVIDERS[cfg.provider];
   if (p.needsKey && !cfg.apiKey) { alert(t("err.noKey", state.lang)); return; }
@@ -272,7 +362,9 @@ async function run() {
   btn.disabled = true;
   btn.textContent = t("gen.running", state.lang);
   const box = $("#result");
-  box.innerHTML = `<div class="spinner"></div><div class="note">${esc(t("gen.running", state.lang))}</div>`;
+  const n = cfg.references.length;
+  box.innerHTML = `<div class="spinner"></div><div class="note">${esc(t("gen.running", state.lang))}` +
+                  `${n ? " · " + esc(t("gen.refsCount", state.lang).replace("%d", n)) : ""}</div>`;
 
   try {
     const blob = await generate(cfg);
@@ -293,7 +385,8 @@ function showResult(url, blob, cfg) {
   box.innerHTML = `
     <img id="resultImg" src="${url}" alt="generated">
     <div class="res-meta">
-      <span>${esc(cfg.provider)} · ${esc(cfg.model || "-")} · ${cfg.width}×${cfg.height} · seed ${cfg.seed}</span>
+      <span>${esc(cfg.provider)} · ${esc(cfg.model || "-")} · ${cfg.width}×${cfg.height} · seed ${cfg.seed}` +
+      `${cfg.references.length ? " · " + esc(t("gen.refsCount", state.lang).replace("%d", cfg.references.length)) : ""}</span>
     </div>
     <div class="row-btns">
       <a class="btn sm" id="dlBtn" download="${Date.now()}.png" href="${url}">${esc(t("gen.download", state.lang))}</a>
@@ -318,7 +411,7 @@ async function saveToGallery(blob, cfg) {
     const rec = {
       id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
       blob, prompt: cfg.prompt, provider: cfg.provider, model: cfg.model,
-      seed: cfg.seed, time: Date.now(),
+      seed: cfg.seed, refs: cfg.references.map(r => r.role), time: Date.now(),
     };
     await new Promise((res, rej) => {
       const tx = db.transaction("shots", "readwrite");
@@ -365,7 +458,8 @@ async function renderGallery() {
       <img src="${url}" alt="" loading="lazy">
       <figcaption>
         <span class="sh-p">${esc((s.prompt || "").slice(0, 90))}</span>
-        <span class="sh-m">${esc(s.provider)} · ${esc(s.model || "-")} · seed ${s.seed}</span>
+        <span class="sh-m">${esc(s.provider)} · ${esc(s.model || "-")} · seed ${s.seed}` +
+          `${s.refs && s.refs.length ? " · " + esc(s.refs.join("+")) : ""}</span>
         <span class="sh-a">
           <a href="${url}" download="${s.id}.png">${esc(t("gal.dl", state.lang))}</a>
           <button type="button" data-use="${esc(s.id)}">${esc(t("gal.use", state.lang))}</button>
@@ -391,19 +485,24 @@ function bind() {
     if (pp) {
       const id = pp.dataset.pose;
       state.sel.pose = state.sel.pose && state.sel.pose.id === id ? null : state.pose.find(x => x.id === id);
-      renderPicked(); return;
+      renderPicked(); renderRefs(); return;
     }
     const cc = e.target.closest("[data-costume]");
     if (cc) {
       const id = cc.dataset.costume;
       state.sel.costume = state.sel.costume && state.sel.costume.id === id ? null : state.costume.find(x => x.id === id);
-      renderPicked(); return;
+      renderPicked(); renderRefs(); return;
     }
     const cl = e.target.closest("[data-clear]");
     if (cl) {
       if (cl.dataset.clear === "pose") state.sel.pose = null;
       else state.sel.costume = null;
-      renderPicked(); return;
+      renderPicked(); renderRefs(); return;
+    }
+    const rd = e.target.closest("[data-refdel]");
+    if (rd) {
+      if (rd.dataset.refdel === "person") { state.person = null; renderRefs(); autoPrompt(); }
+      return;
     }
     const mb = e.target.closest("[data-more]");
     if (mb) { mb.dataset.more === "pose" ? appendPose() : appendCostume(); return; }
@@ -438,31 +537,14 @@ function bind() {
   };
   $("#runBtn").onclick = run;
 
-  $("#addRef").onclick = () => $("#refInput").click();
-  $("#refInput").onchange = e => { addRefs([...e.target.files]); e.target.value = ""; };
-  const box = $("#refsBox");
-  box.ondragover = e => { e.preventDefault(); box.classList.add("drag"); };
-  box.ondragleave = () => box.classList.remove("drag");
-  box.ondrop = e => { e.preventDefault(); box.classList.remove("drag"); addRefs([...e.dataTransfer.files]); };
+  $("#addPerson").onclick = () => $("#personInput").click();
+  $("#personInput").onchange = e => {
+    const f = [...e.target.files].find(x => x.type.startsWith("image/"));
+    if (f) setPerson(f);
+    e.target.value = "";
+  };
 
   $("#galClear").onclick = async () => { await clearShots(); renderGallery(); };
-}
-
-function addRefs(files) {
-  files.filter(f => f.type.startsWith("image/")).forEach(f => {
-    state.refs.push({ file: f, name: f.name, url: URL.createObjectURL(f) });
-  });
-  renderRefs();
-}
-function renderRefs() {
-  const box = $("#refsBox");
-  if (!state.refs.length) { box.innerHTML = `<div class="refs-empty">${esc(t("gen.refsEmpty", state.lang))}</div>`; return; }
-  box.innerHTML = state.refs.map((r, i) => `
-    <div class="ref"><img src="${r.url}" alt="">
-      <button type="button" data-refdel="${i}">×</button></div>`).join("");
-  box.querySelectorAll("[data-refdel]").forEach(b => b.onclick = () => {
-    state.refs.splice(+b.dataset.refdel, 1); renderRefs();
-  });
 }
 
 /* ============================================================ 启动 */
@@ -473,6 +555,5 @@ $("#seed").value = state.cfg.seed;
 $("#negprompt").value = state.cfg.negative || DEFAULT_NEGATIVE;
 setLang(state.lang);
 loadData();
-renderRefs();
 renderGallery();
 })();

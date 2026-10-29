@@ -82,7 +82,21 @@
   <section class="pane pane-ctrl" id="paneCtrl">
     <header class="pane-hd">
       <h2 data-i18n="gen.title">③ 生成设置</h2>
+      <span class="tag tag-img2img" id="img2imgTag" hidden data-i18n="gen.img2imgTag">支持参考图</span>
     </header>
+
+    <div class="refs-block">
+      <div class="refs-hd">
+        <span class="refs-title" data-i18n="gen.refs">参考图（按顺序送入接口）</span>
+        <span class="refs-count" id="refCount"></span>
+      </div>
+      <p class="refs-order" data-i18n="gen.refsOrder">顺序即语义：参考图 1 = 姿势，2 = 服装，3 = 人像</p>
+      <div class="ref-slots" id="refSlots"></div>
+      <p class="note" id="personNote"></p>
+      <p class="warn-line" id="refWarn" hidden></p>
+      <input type="file" id="personInput" accept="image/*" hidden>
+      <button class="btn sm" type="button" id="addPerson" data-i18n="gen.slotUpload">上传人像</button>
+    </div>
 
     <div class="field">
       <label for="provider" data-i18n="gen.provider">生图接口</label>
@@ -142,18 +156,6 @@
     <div class="field">
       <label for="negprompt" data-i18n="gen.neg">负面提示词</label>
       <input type="text" id="negprompt" spellcheck="false">
-    </div>
-
-    <div class="field">
-      <label data-i18n="gen.refs">附加参考图</label>
-      <div class="refs" id="refsBox">
-        <div class="refs-empty" data-i18n="gen.refsEmpty">未添加参考图</div>
-      </div>
-      <div class="row-btns">
-        <button class="btn sm" type="button" id="addRef" data-i18n="gen.refsAdd">添加参考图</button>
-        <span class="hint" data-i18n="gen.refsHint"></span>
-      </div>
-      <input type="file" id="refInput" accept="image/*" multiple hidden>
     </div>
 
     <button class="btn primary big" type="button" id="runBtn" data-i18n="gen.run">生成图片</button>

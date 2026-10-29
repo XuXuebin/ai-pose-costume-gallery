@@ -14,14 +14,15 @@
 ## これは何ですか
 
 日本語の AI 絵付け向けリファレンス集——**ポーズ集**と**衣装集**——を一か所にまとめ、
-さらに**統合スタジオ**を追加しました。左でポーズ、右で衣装を選び、生成 API を設定して
-クリックするだけで生成。結果はブラウザ内のローカルギャラリーへ自動保存されます。
+さらに**統合スタジオ**を追加しました。左でポーズ、右で衣装を選び、希望の人物の写真を
+アップロードすると、**3 枚すべての画像をまとめて画像生成 API に渡して img2img 生成**します。
+クリックするだけで結果がブラウザ内のローカルギャラリーへ自動保存されます。
 
 | | 内容 | 数 |
 |---|---|---|
 | 🧍 **ポーズ集** | 顔のないグレーの人形線画（3:4）、各ポーズ 5 角度 | 288 ポーズ / **1,439 枚** |
 | 👗 **衣装集** | 人物の入っていない衣装だけの画像（2:3）、8 カテゴリ | **1,407 セット** |
-| 🎨 **統合スタジオ** | ポーズ × 衣装 × 生成 API → 生成して保存 | 3 種の API |
+| 🎨 **統合スタジオ** | ポーズ参考 + 衣装参考 + 人物参考 → 画像生成（img2img） | 4 種の API |
 
 表示言語：**中文 / English / 日本語** をいつでも切り替えられます。
 
@@ -74,37 +75,62 @@ Cloudflare Pages / オブジェクトストレージ / Nginx にも対応して�
 ## スタジオの使い方
 
 ```
-① ポーズを選ぶ  →  ② 衣装を選ぶ  →  ③ 生成設定  →  生成  →  ギャラリーへ自動保存
+① ポーズを選ぶ  →  ② 衣装を選ぶ  →  ③ 参考画像 + API 設定  →  生成  →  ギャラリーへ自動保存
 ```
 
 1. **ポーズ**：シリーズ（4）、アングル（5）、カテゴリで絞り込み、または ID・ポーズ名で検索。
+   選んだ線画が**自動的に参考画像 1** になります。
 2. **衣装**：カテゴリ（8）で絞り込み、または ID・キーワードで検索（中国語・英語どちらも可）。
-3. **API**：3 種の画像生成 API から選び、フォームに記入すればすぐ使えます。
-4. **「画像を生成」をクリック**：結果がそのまま表示され、PNG としてダウンロードできます。
+   選んだ衣装画像が**自動的に参考画像 2** になります。
+3. **人物の参考画像をアップロード**： 希望する人物の写真を 3 つ目のスロットへドラッグ（省略可）
+   → **参考画像 3**。
+4. **API**：4 種の画像生成 API から選び、フォームに記入すればすぐ使えます。
+5. **「画像を生成」をクリック**：結果がそのまま表示され、PNG としてダウンロードできます。
    **同時にローカルギャラリー（IndexedDB）へ自動保存**されるので、リロードしても消えません。
-5. **ギャラリー**：プロンプトの再利用・ダウンロード・削除・全削除。画像は自分のブラウザ内だけに
+6. **ギャラリー**：プロンプトの再利用・ダウンロード・削除・全削除。画像は自分のブラウザ内だけに
    保存され、**アップロードされることはありません**。
 
-### 3 種の画像生成 API
+### 参考画像をどう API に渡すか
 
-| API | キー | 画像入力 | 備考 |
+3 枚は**スロットの順序のまま**送信され、プロンプトでは「Reference image 1/2/3」と呼びます。
+
+| スロット | 入手元 | 実際に送る元ファイル | 役割 |
 |---|---|---|---|
-| **Pollinations** | 不要 | ✗ | 既定。ブラウザから直接呼べます。画像は第三者サービスが生成します |
-| **OpenAI 互換** | 必要 | ✓ | `/v1/images/generations`、参考画像があれば `/v1/images/edits`。多くのサービスは CORS 非対応のため、エラー時は「エンドポイント」に自前のプロキシを指定してください |
-| **カスタム URL** | 任意 | ✗ | 任意の URL テンプレート。`{prompt}` `{width}` `{height}` `{seed}` `{model}` `{negative}` が使えます |
+| 1 ポーズ参考 | ポーズ集 | `原図`（900×1200 PNG） | 姿勢・手足・構図 |
+| 2 衣装参考 | 衣装集 | `画像`（1366×2048 WebP） | 服装・配色・素材感 |
+| 3 人物参考 | ローカル | アップロードしたファイル | 顔・髪型・雰囲気 |
+
+元の 2 サイトはいずれも `Access-Control-Allow-Origin: *` を返す、ブラウザは**画像のバイト列を
+クロスオリジンで取得**して API が求める形式（multipart / base64）に変換できます。
+リポジトリに画像を入れる必要はありません。
+
+### 4 種の画像生成 API
+
+| API | キー | 複数参考画像 | 備考 |
+|---|---|---|---|
+| **Pollinations** | 不要 | ✗ | テキスト生成のみ。ブラウザから直接呼べます。画像は第三者サービスが生成します |
+| **OpenAI 互換** | 必要 | ✓ | `POST /v1/images/edits` に 3 枚を `image[]` として一括送信。多くのサービスは CORS 非対応のため、エラー時は「エンドポイント」に自前のプロキシを指定してください |
+| **Google Gemini** | 必要 | ✓ | `generateContent` に 3 枚を base64 の `inline_data` として送信（1 回の複数画像入力に対応） |
+| **カスタム URL** | 任意 | ✓ | `POST` JSON：`{prompt, images:[{role,name,data_url}], width, height, seed, model}` |
+
+参考画像に対応しない API を選んだ場合、UI は**「テキストのプロンプトのみで生成される」**ことを
+明示的に警告します。
 
 エンドポイント・キー・モデル・シードはブラウザの `localStorage` に保存され、**サーバーへは送信されません**。
 共用端末では使い終わったらサイトデータを削除してください。
 
 ### プロンプトは自動で組み立てられます
 
-ポーズと衣装を選ぶと、画像モデルが理解できる英語表現にプロンプトが合成されます。
+参考画像を設定すると、画像モデルが理解できる英語表現にプロンプトが合成されます。
 
 ```
-full-body single subject, glamorous style, standing pose, three-quarter view,
-wearing cream blouse ribbon ivory mini skirt shorts jacket beige tights,
-outfit: 奶油色 女式衬衫 蝴蝶结 象牙白 短款 半身裙 短裤 夹克 米色 连裤袜,
-full body character, fashion illustration, clean plain background, ...
+Outfit details: cream blouse ribbon ivory mini skirt shorts jacket beige tights.
+Reference image 1 is the POSE and body posture to reproduce exactly.
+Reference image 2 is the OUTFIT to put on the character, keep the same clothing, colors and materials.
+Reference image 3 is the CHARACTER: keep the same face, hairstyle and overall appearance.
+Generate a full-body character illustration that keeps the pose from the pose reference,
+the outfit from the costume reference, the face of the person reference.
+Single character, clean plain background, studio lighting, high quality, detailed fabric texture, natural proportions.
 ```
 
 ポーズの中国語用語（カテゴリ／アングル／シリーズ）には英訳表（`tools/pose_terms.json`）があり、
