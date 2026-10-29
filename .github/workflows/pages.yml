@@ -9,8 +9,6 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  # configure-pages 的 enablement 需要它来自动开启 Pages
-  administration: write
 
 concurrency:
   group: pages
