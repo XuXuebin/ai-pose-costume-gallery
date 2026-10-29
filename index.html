@@ -22,6 +22,7 @@
     <a href="galleries/pose/" data-i18n="nav.pose">姿势库</a>
     <a href="galleries/costume/" data-i18n="nav.costume">服装库</a>
   </nav>
+  <a class="ghstar" href="https://github.com/XuXuebin/ai-pose-costume-gallery" target="_blank" rel="noopener noreferrer" title="在 GitHub 上 Star 这个仓库"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.918 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg><span>Star</span><em class="ghcount"></em></a>
   <div class="lang" role="group" aria-label="language">
     <button type="button" data-lang="zh">中</button>
     <button type="button" data-lang="en">EN</button>
@@ -40,6 +41,7 @@
   <div class="hero-cta">
     <a class="btn primary" href="#studio" data-i18n="hero.cta"></a>
     <a class="btn" href="galleries/pose/" data-i18n="hero.cta2"></a>
+    <a class="ghstar" href="https://github.com/XuXuebin/ai-pose-costume-gallery" target="_blank" rel="noopener noreferrer" title="在 GitHub 上 Star 这个仓库"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.918 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg><span>Star</span><em class="ghcount"></em></a>
   </div>
 </section>
 
@@ -207,9 +209,26 @@
     <a href="https://ai-pose-gallery.pages.dev/" target="_blank" rel="noopener noreferrer">ai-pose-gallery</a>
     ·
     <a href="https://ai-costume-gallery.pages.dev/" target="_blank" rel="noopener noreferrer">ai-costume-gallery</a>
+    ·
+    <a href="https://github.com/XuXuebin/ai-pose-costume-gallery" target="_blank" rel="noopener noreferrer">GitHub 仓库</a>
   </p>
   <p class="note" data-i18n="foot.lic"></p>
 </footer>
+
+<script>
+/* 读取仓库 star 数（GitHub 公共 API，失败则静默降级为不带数字） */
+(function () {
+  var els = document.querySelectorAll('.ghcount');
+  if (!els.length) return;
+  fetch('https://api.github.com/repos/XuXuebin/ai-pose-costume-gallery', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d || typeof d.stargazers_count !== 'number') return;
+      for (var i = 0; i < els.length; i++) els[i].textContent = d.stargazers_count;
+    })
+    .catch(function () {});
+})();
+</script>
 
 <script src="studio/i18n.js"></script>
 <script src="studio/generator.js"></script>

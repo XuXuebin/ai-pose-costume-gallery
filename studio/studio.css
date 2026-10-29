@@ -178,3 +178,14 @@ textarea{resize:vertical;line-height:1.6;font-family:ui-monospace,SFMono-Regular
   .picker{max-height:none;grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* GitHub Star 入口 */
+.ghstar{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 14px;border-radius:99px;
+  border:1px solid var(--line2);background:rgba(26,30,36,.7);color:#dfe3ea;font-size:14px;font-weight:700;
+  text-decoration:none;white-space:nowrap;transition:.15s;-webkit-tap-highlight-color:transparent}
+.ghstar:hover{border-color:#e3c8ff;color:#fff;background:rgba(227,200,255,.12)}
+.ghstar svg{flex:0 0 auto;color:#f0c674}
+.ghstar:hover svg{color:#ffd85e}
+.ghcount{font-style:normal;font-size:12.5px;font-weight:700;color:#aab2bf;font-variant-numeric:tabular-nums;
+  padding-left:8px;margin-left:1px;border-left:1px solid rgba(255,255,255,.18)}
+.ghcount:empty{display:none}

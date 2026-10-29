@@ -171,16 +171,28 @@ footer{color:var(--tx3);font-size:12px;text-align:center;padding:8px 16px 44px;l
 @media (max-width:560px){.meta .desc{font-size:12px;-webkit-line-clamp:2}.meta .cat{display:block;font-size:12px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
+
+/* GitHub Star 入口 */
+.ghstar{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 14px;border-radius:99px;
+  border:1px solid var(--line2);background:rgba(26,30,36,.7);color:#dfe3ea;font-size:14px;font-weight:700;
+  text-decoration:none;white-space:nowrap;transition:.15s;-webkit-tap-highlight-color:transparent}
+.ghstar:hover{border-color:#e3c8ff;color:#fff;background:rgba(227,200,255,.12)}
+.ghstar svg{flex:0 0 auto;color:#f0c674}
+.ghstar:hover svg{color:#ffd85e}
+.ghcount{font-style:normal;font-size:12.5px;font-weight:700;color:#aab2bf;font-variant-numeric:tabular-nums;
+  padding-left:8px;margin-left:1px;border-left:1px solid rgba(255,255,255,.18)}
+.ghcount:empty{display:none}
+
 </style>
 </head>
 <body>
 <header class="hero">
-  <div class="hero-top"><div class="eyebrow">COSTUME-DB-01 ・ AI 绘画用服装参考集</div><nav class="infotabs" id="infotabs" aria-label="使用提示与注意事项"><button type="button" class="itab" id="itab0" aria-haspopup="dialog" aria-expanded="false" aria-controls="ipanel0">使用提示</button><button type="button" class="itab" id="itab1" aria-haspopup="dialog" aria-expanded="false" aria-controls="ipanel1">注意事项</button><div class="ipanel" id="ipanel0" role="dialog" aria-labelledby="ipt0" tabindex="-1" hidden><div class="ipanel-hd"><h2 id="ipt0">使用提示</h2><button type="button" class="ipclose" aria-label="关闭">×</button></div><ul><li>作为参考图，可载入各类 AI 工具的服装参考 / 图像参考功能中使用。</li><li>用分类按钮筛选，也可以在搜索框里按 ID 或服装词查找（例如：牛仔布、蕾丝、白）。</li><li>下载原尺寸 PNG 使用，细节也能完整参考。</li><li>画面中没有人物，只有服装本身。脸型、体型、背景请另外用参考图或提示词补上。</li></ul></div><div class="ipanel" id="ipanel1" role="dialog" aria-labelledby="ipt1" tabindex="-1" hidden><div class="ipanel-hd"><h2 id="ipt1">注意事项</h2><button type="button" class="ipclose" aria-label="关闭">×</button></div><ul><li>可免费使用（作品创作中的商用、编辑、参考使用均可）。</li><li>禁止对图片数据本身（含原尺寸与加工后的版本）进行再分发、转载或转售。</li><li>无需署名（也可自愿标注）。图片元数据已清除，请自行判断使用，风险自负。</li><li>这是 AI 生成的虚构服装，并非真实商品的照片。</li><li>收录的服装图像全部由文生图（t2i）方式生成，未使用任何真实商品图片。</li><li>发布前已做与既有品牌的相似度排查，但不保证不侵犯他人权利。</li><li>使用时请自行确认与判断。因使用本数据所产生的问题，原作者不承担责任。</li><li>请勿用于表现真人或未成年人的用途，也不要用于违反公序良俗的用途。</li></ul></div></nav></div>
+  <div class="hero-top"><div class="eyebrow">COSTUME-DB-01 ・ AI 绘画用服装参考集</div><nav class="infotabs" id="infotabs" aria-label="使用提示与注意事项"><button type="button" class="itab" id="itab0" aria-haspopup="dialog" aria-expanded="false" aria-controls="ipanel0">使用提示</button><button type="button" class="itab" id="itab1" aria-haspopup="dialog" aria-expanded="false" aria-controls="ipanel1">注意事项</button><div class="ipanel" id="ipanel0" role="dialog" aria-labelledby="ipt0" tabindex="-1" hidden><div class="ipanel-hd"><h2 id="ipt0">使用提示</h2><button type="button" class="ipclose" aria-label="关闭">×</button></div><ul><li>作为参考图，可载入各类 AI 工具的服装参考 / 图像参考功能中使用。</li><li>用分类按钮筛选，也可以在搜索框里按 ID 或服装词查找（例如：牛仔布、蕾丝、白）。</li><li>下载原尺寸 PNG 使用，细节也能完整参考。</li><li>画面中没有人物，只有服装本身。脸型、体型、背景请另外用参考图或提示词补上。</li></ul></div><div class="ipanel" id="ipanel1" role="dialog" aria-labelledby="ipt1" tabindex="-1" hidden><div class="ipanel-hd"><h2 id="ipt1">注意事项</h2><button type="button" class="ipclose" aria-label="关闭">×</button></div><ul><li>可免费使用（作品创作中的商用、编辑、参考使用均可）。</li><li>禁止对图片数据本身（含原尺寸与加工后的版本）进行再分发、转载或转售。</li><li>无需署名（也可自愿标注）。图片元数据已清除，请自行判断使用，风险自负。</li><li>这是 AI 生成的虚构服装，并非真实商品的照片。</li><li>收录的服装图像全部由文生图（t2i）方式生成，未使用任何真实商品图片。</li><li>发布前已做与既有品牌的相似度排查，但不保证不侵犯他人权利。</li><li>使用时请自行确认与判断。因使用本数据所产生的问题，原作者不承担责任。</li><li>请勿用于表现真人或未成年人的用途，也不要用于违反公序良俗的用途。</li></ul></div></nav><a class="ghstar" href="https://github.com/XuXuebin/ai-pose-costume-gallery" target="_blank" rel="noopener noreferrer" title="在 GitHub 上 Star 这个仓库"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.918 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg><span>Star</span><em class="ghcount"></em></a></div>
   <h1><span>服装集</span> 数据库</h1>
   <p class="sub">画面中没有人物，只有服装本身的图片（2:3）。按春 / 夏 / 秋 / 冬 / 内衣 / 派对 / 泳装 / 性感分类浏览。</p>
 <div class="cta">
   <p class="cta-lead">原站：ai-costume-gallery.pages.dev · 本页为简体中文本地化版本</p>
-  <div class="cta-row">
+  <div class="cta-row"><a class="ghstar" href="https://github.com/XuXuebin/ai-pose-costume-gallery" target="_blank" rel="noopener noreferrer" title="在 GitHub 上 Star 这个仓库"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.918 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg><span>Star</span><em class="ghcount"></em></a>
     <a class="btn-oc" href="https://ai-costume-gallery.pages.dev" target="_blank" rel="noopener noreferrer">访问原站</a>
     <a class="chip-by" href="https://x.com/giaaibusi" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>制作者　ギア</a>
   </div>
@@ -199,7 +211,7 @@ footer{color:var(--tx3);font-size:12px;text-align:center;padding:8px 16px 44px;l
 <footer id="foot">
 <div class="cta cta-s">
   <p class="cta-lead">原站：ai-costume-gallery.pages.dev · 本页为简体中文本地化版本</p>
-  <div class="cta-row">
+  <div class="cta-row"><a class="ghstar" href="https://github.com/XuXuebin/ai-pose-costume-gallery" target="_blank" rel="noopener noreferrer" title="在 GitHub 上 Star 这个仓库"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.918 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg><span>Star</span><em class="ghcount"></em></a>
     <a class="btn-oc" href="https://ai-costume-gallery.pages.dev" target="_blank" rel="noopener noreferrer">访问原站</a>
     <a class="chip-by" href="https://x.com/giaaibusi" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>制作者　ギア</a>
   </div>
@@ -372,5 +384,21 @@ drawTabs(); draw();
 })();
 
 </script>
+
+<script>
+/* 读取仓库 star 数（GitHub 公共 API，失败则静默降级） */
+(function () {
+  var els = document.querySelectorAll('.ghcount');
+  if (!els.length) return;
+  fetch('https://api.github.com/repos/XuXuebin/ai-pose-costume-gallery', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d || typeof d.stargazers_count !== 'number') return;
+      for (var i = 0; i < els.length; i++) els[i].textContent = d.stargazers_count;
+    })
+    .catch(function () {});
+})();
+</script>
+
 </body>
 </html>

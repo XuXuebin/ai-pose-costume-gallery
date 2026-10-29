@@ -243,16 +243,28 @@ body.selmode .selbar{display:flex}
   .ppreview{height:44vh}
 }
 
+
+/* GitHub Star 入口 */
+.ghstar{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 14px;border-radius:99px;
+  border:1px solid var(--line2);background:rgba(26,30,36,.7);color:#dfe3ea;font-size:14px;font-weight:700;
+  text-decoration:none;white-space:nowrap;transition:.15s;-webkit-tap-highlight-color:transparent}
+.ghstar:hover{border-color:#e3c8ff;color:#fff;background:rgba(227,200,255,.12)}
+.ghstar svg{flex:0 0 auto;color:#f0c674}
+.ghstar:hover svg{color:#ffd85e}
+.ghcount{font-style:normal;font-size:12.5px;font-weight:700;color:#aab2bf;font-variant-numeric:tabular-nums;
+  padding-left:8px;margin-left:1px;border-left:1px solid rgba(255,255,255,.18)}
+.ghcount:empty{display:none}
+
 </style>
 </head>
 <body>
 <header class="hero">
-  <div class="hero-top"><div class="eyebrow">POSE-DB-01 ・ 图片参考用姿势集</div><nav class="infotabs" id="infotabs" aria-label="使用提示 · 注意事项"><button type="button" class="itab" id="itab0" aria-haspopup="dialog" aria-expanded="false" aria-controls="ipanel0">使用提示</button><button type="button" class="itab" id="itab1" aria-haspopup="dialog" aria-expanded="false" aria-controls="ipanel1">注意事项</button><div class="ipanel" id="ipanel0" role="dialog" aria-labelledby="ipt0" tabindex="-1" hidden><div class="ipanel-hd"><h2 id="ipt0">使用提示</h2><button type="button" class="ipclose" aria-label="关闭">×</button></div><ul><li>作为参考图片，载入各类 AI 工具的姿势参考、构图参考功能中使用。</li><li>连续使用同一姿势的图片，可以更容易让生成图片、视频的姿态保持一致。</li><li>下载原尺寸 PNG 使用，可以参考到更加精细的细节。</li><li>画面为没有五官的灰色人偶线稿。脸、服装、背景请通过提示词或其他参考图（例如脸部参考图）来补充。</li></ul></div><div class="ipanel" id="ipanel1" role="dialog" aria-labelledby="ipt1" tabindex="-1" hidden><div class="ipanel-hd"><h2 id="ipt1">注意事项</h2><button type="button" class="ipclose" aria-label="关闭">×</button></div><ul><li>可免费使用（作品创作中的商用、编辑、参考使用均可）。</li><li>禁止对图片数据本身（含原尺寸与加工后的版本）进行再分发、转载或转售。</li><li>无需署名（当然也欢迎署名）。图片的元数据已清除。请自行承担使用风险。</li><li>画面描绘的是人偶线稿，并非现实中的人物。</li><li>请勿用于表现真实人物或未成年人的用途，也不要用于违反公序良俗的用途。</li></ul></div></nav></div>
+  <div class="hero-top"><div class="eyebrow">POSE-DB-01 ・ 图片参考用姿势集</div><nav class="infotabs" id="infotabs" aria-label="使用提示 · 注意事项"><button type="button" class="itab" id="itab0" aria-haspopup="dialog" aria-expanded="false" aria-controls="ipanel0">使用提示</button><button type="button" class="itab" id="itab1" aria-haspopup="dialog" aria-expanded="false" aria-controls="ipanel1">注意事项</button><div class="ipanel" id="ipanel0" role="dialog" aria-labelledby="ipt0" tabindex="-1" hidden><div class="ipanel-hd"><h2 id="ipt0">使用提示</h2><button type="button" class="ipclose" aria-label="关闭">×</button></div><ul><li>作为参考图片，载入各类 AI 工具的姿势参考、构图参考功能中使用。</li><li>连续使用同一姿势的图片，可以更容易让生成图片、视频的姿态保持一致。</li><li>下载原尺寸 PNG 使用，可以参考到更加精细的细节。</li><li>画面为没有五官的灰色人偶线稿。脸、服装、背景请通过提示词或其他参考图（例如脸部参考图）来补充。</li></ul></div><div class="ipanel" id="ipanel1" role="dialog" aria-labelledby="ipt1" tabindex="-1" hidden><div class="ipanel-hd"><h2 id="ipt1">注意事项</h2><button type="button" class="ipclose" aria-label="关闭">×</button></div><ul><li>可免费使用（作品创作中的商用、编辑、参考使用均可）。</li><li>禁止对图片数据本身（含原尺寸与加工后的版本）进行再分发、转载或转售。</li><li>无需署名（当然也欢迎署名）。图片的元数据已清除。请自行承担使用风险。</li><li>画面描绘的是人偶线稿，并非现实中的人物。</li><li>请勿用于表现真实人物或未成年人的用途，也不要用于违反公序良俗的用途。</li></ul></div></nav><a class="ghstar" href="https://github.com/XuXuebin/ai-pose-costume-gallery" target="_blank" rel="noopener noreferrer" title="在 GitHub 上 Star 这个仓库"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.918 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg><span>Star</span><em class="ghcount"></em></a></div>
   <h1><span>姿势集</span> 数据库</h1>
   <p class="sub">无面部灰色人偶线稿（3:4）。可按正面、俯拍、仰拍、侧面、斜角等角度对比查看。</p>
 <div class="cta">
   <p class="cta-lead">原站：ai-pose-gallery.pages.dev · 本页为简体中文本地化版本</p>
-  <div class="cta-row">
+  <div class="cta-row"><a class="ghstar" href="https://github.com/XuXuebin/ai-pose-costume-gallery" target="_blank" rel="noopener noreferrer" title="在 GitHub 上 Star 这个仓库"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.918 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg><span>Star</span><em class="ghcount"></em></a>
     <a class="btn-oc" href="https://ai-pose-gallery.pages.dev" target="_blank" rel="noopener noreferrer">访问原站</a>
     <a class="chip-by" href="https://x.com/giaaibusi" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>制作者　ギア</a>
   </div>
@@ -285,7 +297,7 @@ body.selmode .selbar{display:flex}
 <footer id="foot">
 <div class="cta cta-s">
   <p class="cta-lead">原站：ai-pose-gallery.pages.dev · 本页为简体中文本地化版本</p>
-  <div class="cta-row">
+  <div class="cta-row"><a class="ghstar" href="https://github.com/XuXuebin/ai-pose-costume-gallery" target="_blank" rel="noopener noreferrer" title="在 GitHub 上 Star 这个仓库"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.918 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg><span>Star</span><em class="ghcount"></em></a>
     <a class="btn-oc" href="https://ai-pose-gallery.pages.dev" target="_blank" rel="noopener noreferrer">访问原站</a>
     <a class="chip-by" href="https://x.com/giaaibusi" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>制作者　ギア</a>
   </div>
@@ -596,5 +608,21 @@ drawTabs();drawCats();draw();
 })();
 
 </script>
+
+<script>
+/* 读取仓库 star 数（GitHub 公共 API，失败则静默降级） */
+(function () {
+  var els = document.querySelectorAll('.ghcount');
+  if (!els.length) return;
+  fetch('https://api.github.com/repos/XuXuebin/ai-pose-costume-gallery', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d || typeof d.stargazers_count !== 'number') return;
+      for (var i = 0; i < els.length; i++) els[i].textContent = d.stargazers_count;
+    })
+    .catch(function () {});
+})();
+</script>
+
 </body>
 </html>

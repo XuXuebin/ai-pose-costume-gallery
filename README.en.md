@@ -151,7 +151,7 @@ Quality     hd
 > ⚠️ **Two things measured in practice**
 > 1. The hosted Pages site is **https**, so the browser applies **Private Network Access** to
 >    `http://127.0.0.1` and blocks it. To use a local proxy, open the page from a **local preview**:
->    `cd site && python3 -m http.server 8899` → `http://127.0.0.1:8899/`.
+>    `python3 -m http.server 8899` → `http://127.0.0.1:8899/`.
 >    The interface detects a local endpoint and says so.
 > 2. The proxy's account pool contains **region-locked** accounts that randomly answer
 >    `User location is not supported for the API use.`, and **three** reference images can hang for

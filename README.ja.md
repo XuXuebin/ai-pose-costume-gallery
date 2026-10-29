@@ -144,7 +144,7 @@ API キー        sk-antigravity
 > ⚠️ **実測で確認した 2 点**
 > 1. 公開 Pages は **https** のため、ブラウザが `http://127.0.0.1` に **Private Network Access** を
 >    適用して遮断します。本機プロキシを使う場合は**ローカルプレビュー**から開いてください：
->    `cd site && python3 -m http.server 8899` → `http://127.0.0.1:8899/`。
+>    `python3 -m http.server 8899` → `http://127.0.0.1:8899/`。
 >    ローカルアドレスを検出すると UI にお知らせが表示されます。
 > 2. このプロキシのアカウントプールには**地域制限**のあるものが含まれ、
 >    `User location is not supported for the API use.` を返す場合があります。

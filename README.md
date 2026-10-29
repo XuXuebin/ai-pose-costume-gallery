@@ -136,7 +136,7 @@ API Key    sk-antigravity
 
 > ⚠️ **两点实测提醒**
 > 1. 线上 Pages 是 **https**，浏览器会对 `http://127.0.0.1` 启用 **Private Network Access** 拦截。
->    要用本机代理请从**本地预览**打开：`cd site && python3 -m http.server 8899` → `http://127.0.0.1:8899/`。
+>    要用本机代理请从**本地预览**打开：`python3 -m http.server 8899` → `http://127.0.0.1:8899/`。
 >    界面检测到本机地址时会提示这一点。
 > 2. 该代理的账号池里有**被地区限制**的账号，会随机返回 `User location is not supported for the API use.`；
 >    **3 张参考图**时还可能长时间挂起。实测 **2 张（姿势 + 服装）最稳**，出图约 60–90 秒。

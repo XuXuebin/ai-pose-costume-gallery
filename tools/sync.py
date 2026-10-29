@@ -98,6 +98,65 @@ def patch_html(html: str, rules: list[tuple]) -> str:
     return out
 
 
+# ---------------------------------------------------------------- GitHub Star 入口
+GH_REPO = "https://github.com/XuXuebin/ai-pose-costume-gallery"
+GH_BTN = (
+    '<a class="ghstar" href="' + GH_REPO + '" target="_blank" rel="noopener noreferrer" '
+    'title="在 GitHub 上 Star 这个仓库">'
+    '<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">'
+    '<path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192'
+    'a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.918 6.374a.75.75 0 0 1 '
+    '.416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg><span>Star</span><em class="ghcount"></em></a>'
+)
+GH_CSS = """
+/* GitHub Star 入口 */
+.ghstar{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 14px;border-radius:99px;
+  border:1px solid var(--line2);background:rgba(26,30,36,.7);color:#dfe3ea;font-size:14px;font-weight:700;
+  text-decoration:none;white-space:nowrap;transition:.15s;-webkit-tap-highlight-color:transparent}
+.ghstar:hover{border-color:#e3c8ff;color:#fff;background:rgba(227,200,255,.12)}
+.ghstar svg{flex:0 0 auto;color:#f0c674}
+.ghstar:hover svg{color:#ffd85e}
+.ghcount{font-style:normal;font-size:12.5px;font-weight:700;color:#aab2bf;font-variant-numeric:tabular-nums;
+  padding-left:8px;margin-left:1px;border-left:1px solid rgba(255,255,255,.18)}
+.ghcount:empty{display:none}
+"""
+GH_JS = """
+<script>
+/* 读取仓库 star 数（GitHub 公共 API，失败则静默降级） */
+(function () {
+  var els = document.querySelectorAll('.ghcount');
+  if (!els.length) return;
+  fetch('https://api.github.com/repos/XuXuebin/ai-pose-costume-gallery', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d || typeof d.stargazers_count !== 'number') return;
+      for (var i = 0; i < els.length; i++) els[i].textContent = d.stargazers_count;
+    })
+    .catch(function () {});
+})();
+</script>
+"""
+
+
+def add_github(html: str) -> str:
+    """在图库页加入 GitHub Star 按钮（顶部 CTA + 页脚 CTA）与实时 star 数。"""
+    # 1) 样式
+    if ".ghstar{" not in html:
+        html = html.replace("</style>", GH_CSS + "\n</style>", 1)
+    # 2) 按钮：插到每个 .cta-row 的最前面（顶部 + 页脚各一处）
+    html = html.replace('<div class="cta-row">', '<div class="cta-row">' + GH_BTN, 2)
+    # 3) 右上角导航区之后也放一个（和使用提示 / 注意事项并排）
+    nav_old = '<nav class="infotabs" id="infotabs"'
+    if nav_old in html:
+        i = html.index(nav_old)
+        j = html.index('</nav>', i) + len('</nav>')
+        html = html[:j] + GH_BTN + html[j:]
+    # 4) 脚本
+    if "api.github.com/repos/XuXuebin" not in html:
+        html = html.replace("</body>", GH_JS + "\n</body>", 1)
+    return html
+
+
 # ---------------------------------------------------------------- 去公开聊天链接
 def strip_open_chat(html: str, origin: str, lead: str) -> str:
     """移除原站的「加入公开聊天」入口，改为指向原站；CTA 文案改为本地化说明。"""
@@ -162,6 +221,7 @@ def build_pose(local_assets=False):
     html = strip_open_chat(
         html, ORIGIN_POSE,
         "原站：ai-pose-gallery.pages.dev · 本页为简体中文本地化版本")
+    html = add_github(html)
 
     out = ROOT / "galleries" / "pose" / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -218,6 +278,7 @@ def build_costume(local_assets=False):
     html = strip_open_chat(
         html, ORIGIN_COSTUME,
         "原站：ai-costume-gallery.pages.dev · 本页为简体中文本地化版本")
+    html = add_github(html)
 
     out = ROOT / "galleries" / "costume" / "index.html"
     out.parent.mkdir(parents=True, exist_ok=True)
