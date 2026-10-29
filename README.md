@@ -27,6 +27,27 @@
 
 ---
 
+## 演示
+
+![统一工作台：三栏式工作台](docs/demo-studio.webp)
+
+*工作台三栏：**① 选择姿势** → **② 选择服装** → **③ 参考图与接口设置***
+
+<table>
+  <tr>
+    <td width="56%" valign="top"><img src="docs/demo-refs.webp" alt="参考图区" width="520"></td>
+    <td width="20%" valign="top"><img src="docs/demo-result.webp" alt="生成结果" width="200"></td>
+    <td width="24%" valign="top">
+      <b>参考图区</b><br>
+      顺序即语义：<b>1 = 姿势</b>、<b>2 = 服装</b>、<b>3 = 人像</b>，三张一起发给接口。<br><br>
+      <b>生成结果</b><br>
+      姿态来自参考图 1，服装来自参考图 2。
+    </td>
+  </tr>
+</table>
+
+---
+
 ## 快速开始
 
 ### 在线预览
@@ -171,6 +192,10 @@ ai-pose-costume-gallery/
 ├── data/
 │   ├── pose.json           姿势数据（供工作台选图）
 │   └── costume.json        服装数据（供工作台选图）
+├── docs/                   演示图片（README 用）
+│   ├── demo-studio.webp    工作台三栏全景
+│   ├── demo-refs.webp      参考图区特写
+│   └── demo-result.webp    生成结果示例
 ├── tools/
 │   ├── sync.py             从两个源项目同步 → 生成 galleries/ 与 data/
 │   ├── pose_terms.json     姿势术语英译表

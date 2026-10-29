@@ -29,6 +29,27 @@ Interface language: **Chinese / English / 日本語**, switchable at any time.
 
 ---
 
+## Demo
+
+![Unified studio: three-column workbench](docs/demo-studio.webp)
+
+*Three columns: **① pick a pose** → **② pick a costume** → **③ reference images & provider***
+
+<table>
+  <tr>
+    <td width="56%" valign="top"><img src="docs/demo-refs.webp" alt="Reference image slots" width="520"></td>
+    <td width="20%" valign="top"><img src="docs/demo-result.webp" alt="Generated result" width="200"></td>
+    <td width="24%" valign="top">
+      <b>Reference slots</b><br>
+      Order is the meaning: <b>1 = pose</b>, <b>2 = costume</b>, <b>3 = person</b> — all three are sent to the API together.<br><br>
+      <b>Generated result</b><br>
+      The posture comes from reference 1, the outfit from reference 2.
+    </td>
+  </tr>
+</table>
+
+---
+
 ## Quick start
 
 ### Local preview
@@ -190,6 +211,10 @@ ai-pose-costume-gallery/
 ├── data/
 │   ├── pose.json           Pose data (used by the studio)
 │   └── costume.json        Costume data (used by the studio)
+├── docs/                   Demo images (used by this README)
+│   ├── demo-studio.webp    Full three-column workbench
+│   ├── demo-refs.webp      Close-up of the reference slots
+│   └── demo-result.webp    Example generated result
 ├── tools/
 │   ├── sync.py             Sync from the two source projects → galleries/ and data/
 │   ├── pose_terms.json     English glossary for pose terms

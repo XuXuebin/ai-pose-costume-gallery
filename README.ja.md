@@ -28,6 +28,27 @@
 
 ---
 
+## デモ
+
+![統合スタジオ：3 カラムの作業画面](docs/demo-studio.webp)
+
+*3 カラム：**① ポーズを選ぶ** → **② 衣装を選ぶ** → **③ 参考画像と API 設定***
+
+<table>
+  <tr>
+    <td width="56%" valign="top"><img src="docs/demo-refs.webp" alt="参考画像スロット" width="520"></td>
+    <td width="20%" valign="top"><img src="docs/demo-result.webp" alt="生成結果" width="200"></td>
+    <td width="24%" valign="top">
+      <b>参考画像スロット</b><br>
+      順序が意味です：<b>1 = ポーズ</b>、<b>2 = 衣装</b>、<b>3 = 人物</b>。3 枚まとめて API に送ります。<br><br>
+      <b>生成結果</b><br>
+      姿勢は参考 1、衣装は参考 2 をもとに生成されています。
+    </td>
+  </tr>
+</table>
+
+---
+
 ## クイックスタート
 
 ### ローカルプレビュー
@@ -183,6 +204,10 @@ ai-pose-costume-gallery/
 ├── data/
 │   ├── pose.json           ポーズデータ（スタジオの選択に使用）
 │   └── costume.json        衣装データ（スタジオの選択に使用）
+├── docs/                   デモ画像（この README で使用）
+│   ├── demo-studio.webp    3 カラム画面全体
+│   ├── demo-refs.webp      参考画像スロットのクローズアップ
+│   └── demo-result.webp    生成結果のサンプル
 ├── tools/
 │   ├── sync.py             2 つの元プロジェクトから galleries/ と data/ を再生成
 │   ├── pose_terms.json     ポーズ用語の英訳表
