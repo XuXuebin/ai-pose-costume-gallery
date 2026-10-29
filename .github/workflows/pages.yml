@@ -33,15 +33,22 @@ jobs:
       - name: Verify assets
         run: python3 tools/verify.py
 
+      - name: Prepare site
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site
+          for p in index.html studio galleries data; do
+            if [ ! -e "$p" ]; then echo "::error::缺少发布目录 $p"; exit 1; fi
+            cp -R "$p" _site/
+          done
+          echo "待发布体积：$(du -sh _site | cut -f1)"
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # 只发布站点所需内容，避免把 .git 一起打包
-          path: |
-            index.html
-            studio
-            galleries
-            data
+          # upload-pages-artifact 只接受单个路径，先用上一步暂存好
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
