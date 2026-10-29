@@ -97,6 +97,30 @@ git push -u origin main
 原站两个图库都带 `Access-Control-Allow-Origin: *`，所以浏览器能**跨域取到图片字节**
 并转成接口需要的格式（multipart 文件 / base64），不需要把图片塞进仓库。
 
+### 本机 Antigravity 代理（推荐）
+
+如果你本机跑着 Antigravity 的 OpenAI 兼容代理（默认 `http://127.0.0.1:8045/v1`），
+点「快捷预设 → **本机 Antigravity 代理**」即可一键填好：
+
+```
+接口地址   http://127.0.0.1:8045/v1
+API Key    sk-antigravity
+模型       gemini-3.1-flash-image
+画质       hd
+```
+
+- **读取模型列表**按钮会调 `GET /v1/models` 把代理里可用的模型（实测 23 个）填进下拉建议。
+- **尺寸**支持任意 `WIDTHxHEIGHT`（代理会自动算宽高比），旁边有 1:1 / 2:3 / 3:4 / 16:9 快捷键。
+- 参考图会在浏览器里等比压到最长边 896px 并转 JPEG（线稿 400KB → 61KB），上传快很多。
+
+> ⚠️ **两点实测提醒**
+> 1. 线上 Pages 是 **https**，浏览器会对 `http://127.0.0.1` 启用 **Private Network Access** 拦截。
+>    要用本机代理请从**本地预览**打开：`cd site && python3 -m http.server 8899` → `http://127.0.0.1:8899/`。
+>    界面检测到本机地址时会提示这一点。
+> 2. 该代理的账号池里有**被地区限制**的账号，会随机返回 `User location is not supported for the API use.`；
+>    **3 张参考图**时还可能长时间挂起。实测 **2 张（姿势 + 服装）最稳**，出图约 60–90 秒。
+>    界面已加 180 秒超时与耗时提示，失败后可直接「换一张」重试。
+
 ### 四种生图接口
 
 | 接口 | 密钥 | 多参考图 | 说明 |

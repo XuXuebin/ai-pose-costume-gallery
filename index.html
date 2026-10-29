@@ -114,23 +114,44 @@
       <input type="password" id="apikey" spellcheck="false" autocomplete="off" placeholder="sk-…">
     </div>
 
+    <div class="field">
+      <label for="model" data-i18n="gen.model">模型</label>
+      <div class="row-inline">
+        <input type="text" id="model" list="modelList" spellcheck="false">
+        <button class="btn sm" type="button" id="loadModels" data-i18n="gen.loadModels">读取模型列表</button>
+      </div>
+      <datalist id="modelList"></datalist>
+    </div>
+
     <div class="grid2">
       <div class="field">
-        <label for="model" data-i18n="gen.model">模型</label>
-        <input type="text" id="model" list="modelList" spellcheck="false">
-        <datalist id="modelList"></datalist>
+        <label for="size" data-i18n="gen.size">尺寸（任意 WIDTHxHEIGHT）</label>
+        <input type="text" id="size" value="1024x1024" spellcheck="false" placeholder="1024x1536">
+        <div class="chips" id="sizeChips">
+          <button type="button" data-size="1024x1024">1:1</button>
+          <button type="button" data-size="1024x1536">2:3</button>
+          <button type="button" data-size="1280x1706">3:4</button>
+          <button type="button" data-size="1920x1080">16:9</button>
+        </div>
       </div>
-      <div class="field">
-        <label for="sizeSel" data-i18n="gen.size">尺寸</label>
-        <select id="sizeSel">
-          <option value="512x512">512 × 512</option>
-          <option value="768x1024">768 × 1024</option>
-          <option value="832x1216">832 × 1216</option>
-          <option value="1024x1024" selected>1024 × 1024</option>
-          <option value="1024x1536">1024 × 1536</option>
-          <option value="1536x1024">1536 × 1024</option>
+      <div class="field" id="qualityField">
+        <label for="quality" data-i18n="gen.quality">画质 quality</label>
+        <select id="quality">
+          <option value="">默认</option>
+          <option value="standard">standard</option>
+          <option value="hd" selected>hd</option>
+          <option value="medium">medium</option>
         </select>
       </div>
+    </div>
+
+    <div class="field">
+      <label data-i18n="gen.presets">快捷预设</label>
+      <div class="chips">
+        <button class="chip-btn" type="button" id="presetLocal" data-i18n="gen.presetLocal">本机 Antigravity 代理</button>
+        <button class="chip-btn" type="button" id="presetOpenAI" data-i18n="gen.presetOpenAI">OpenAI 官方</button>
+      </div>
+      <p class="note" id="localWarn" hidden></p>
     </div>
 
     <div class="grid2">

@@ -321,9 +321,26 @@ function applyProvider() {
   $("#keyField").hidden = !pp.needsKey;
   $("#providerNote").textContent = t(pp.noteKey, state.lang);
   $("#img2imgTag").hidden = !pp.img2img;
+  $("#qualityField").hidden = state.cfg.provider !== "openai";
   saveCfg();
   updateRefWarn();
+  updateLocalWarn();
 }
+function updateLocalWarn() {
+  const ep = $("#endpoint").value.trim();
+  const box = $("#localWarn");
+  if (!ep || !isLocalEndpoint(ep)) { box.hidden = true; return; }
+  const host = new URL(ep).hostname;
+  const pageIsLocal = ["localhost", "127.0.0.1", "::1"].includes(location.hostname);
+  if (pageIsLocal) {
+    box.hidden = false;
+    box.textContent = t("gen.localOk", state.lang).replace("%s", host);
+  } else {
+    box.hidden = false;
+    box.textContent = t("gen.localWarn", state.lang).replace("%s", host);
+  }
+}
+
 function updateRefWarn() {
   const p = PROVIDERS[state.cfg.provider];
   const refs = buildReferences();
@@ -333,8 +350,15 @@ function updateRefWarn() {
 }
 
 /* ============================================================ 生成 */
+function parseSize(str) {
+  const m = String(str || "").match(/(\d+)\s*[x*×]\s*(\d+)/i);
+  if (!m) return { w: 1024, h: 1024 };
+  return { w: Math.max(64, Math.min(4096, +m[1])), h: Math.max(64, Math.min(4096, +m[2])) };
+}
+
 function cfgFromUI() {
-  const [w, h] = $("#sizeSel").value.split("x").map(Number);
+  const size = $("#size").value.trim() || "1024x1024";
+  const { w, h } = parseSize(size);
   return {
     provider: state.cfg.provider,
     endpoint: $("#endpoint").value.trim(),
@@ -343,6 +367,9 @@ function cfgFromUI() {
     prompt: $("#prompt").value.trim(),
     negativePrompt: $("#negprompt").value.trim(),
     width: w, height: h,
+    size: `${w}x${h}`,
+    quality: $("#quality").value,
+    n: 1,
     seed: Number($("#seed").value) || 0,
     references: buildReferences(),
     referer: location.origin + location.pathname,
@@ -363,8 +390,18 @@ async function run() {
   btn.textContent = t("gen.running", state.lang);
   const box = $("#result");
   const n = cfg.references.length;
-  box.innerHTML = `<div class="spinner"></div><div class="note">${esc(t("gen.running", state.lang))}` +
-                  `${n ? " · " + esc(t("gen.refsCount", state.lang).replace("%d", n)) : ""}</div>`;
+  const slow = isLocalEndpoint(cfg.endpoint);
+  box.innerHTML = `<div class="spinner"></div><div class="note" id="runNote">${esc(t("gen.running", state.lang))}` +
+                  `${n ? " · " + esc(t("gen.refsCount", state.lang).replace("%d", n)) : ""}</div>` +
+                  (slow ? `<div class="note">${esc(t("gen.slow", state.lang))}</div>` : "");
+  // 计时
+  const t0 = Date.now();
+  const timer = setInterval(() => {
+    const el = $("#runNote");
+    if (!el) return clearInterval(timer);
+    const s = Math.round((Date.now() - t0) / 1000);
+    el.textContent = `${t("gen.running", state.lang)} · ${s}s`;
+  }, 1000);
 
   try {
     const blob = await generate(cfg);
@@ -375,6 +412,7 @@ async function run() {
   } catch (e) {
     box.innerHTML = `<div class="errbox"><b>${esc(t("gen.err", state.lang))}</b><pre>${esc(String(e.message || e))}</pre></div>`;
   } finally {
+    clearInterval(timer);
     btn.disabled = false;
     btn.textContent = t("gen.run", state.lang);
   }
@@ -524,12 +562,53 @@ function bind() {
     state.cfg.model = p.models[0] || "";
     applyProvider();
   };
-  $("#endpoint").oninput = e => { state.cfg.endpoint = e.target.value; saveCfg(); };
+  $("#endpoint").oninput = e => { state.cfg.endpoint = e.target.value; saveCfg(); updateLocalWarn(); };
   $("#apikey").oninput = e => { state.cfg.apiKey = e.target.value; saveCfg(); };
   $("#model").oninput = e => { state.cfg.model = e.target.value; saveCfg(); };
   $("#negprompt").oninput = e => { state.cfg.negative = e.target.value; saveCfg(); };
   $("#seed").oninput = e => { state.cfg.seed = e.target.value; saveCfg(); };
   $("#reseed").onclick = () => { $("#seed").value = Math.floor(Math.random() * 1e6); };
+
+  // 尺寸快捷键
+  $$("#sizeChips button").forEach(b => b.onclick = () => { $("#size").value = b.dataset.size; });
+  $("#size").oninput = () => state.cfg.size = $("#size").value;
+
+  // 快捷预设
+  $("#presetLocal").onclick = () => {
+    state.cfg.provider = "openai";
+    state.cfg.endpoint = "http://127.0.0.1:8045/v1";
+    state.cfg.apiKey = "sk-antigravity";
+    state.cfg.model = "gemini-3.1-flash-image";
+    renderProviders(); applyProvider();
+    $("#note-slow") && ($("#note-slow").hidden = false);
+    updateLocalWarn();
+  };
+  $("#presetOpenAI").onclick = () => {
+    state.cfg.provider = "openai";
+    state.cfg.endpoint = "https://api.openai.com/v1";
+    state.cfg.apiKey = state.cfg.apiKey && state.cfg.apiKey !== "sk-antigravity" ? state.cfg.apiKey : "";
+    state.cfg.model = "gpt-image-1";
+    renderProviders(); applyProvider();
+    updateLocalWarn();
+  };
+
+  // 读取模型列表
+  $("#loadModels").onclick = async () => {
+    const btn = $("#loadModels");
+    btn.disabled = true;
+    const old = btn.textContent;
+    btn.textContent = "…";
+    try {
+      const ids = await fetchModels($("#endpoint").value.trim(), $("#apikey").value.trim());
+      $("#modelList").innerHTML = ids.map(m => `<option value="${esc(m)}">`).join("");
+      const count = ids.length;
+      btn.textContent = t("gen.modelsLoaded", state.lang).replace("%d", count);
+      setTimeout(() => { btn.textContent = old; }, 2200);
+    } catch (e) {
+      btn.textContent = t("gen.modelsFail", state.lang).replace("%s", String(e.message || e)).slice(0, 40);
+      setTimeout(() => { btn.textContent = old; }, 3000);
+    } finally { btn.disabled = false; }
+  };
 
   $("#autoPrompt").onclick = () => { autoPrompt(); $("#prompt").value = state.lastPrompt; };
   $("#copyPrompt").onclick = async () => {
@@ -552,6 +631,7 @@ bind();
 renderProviders();
 applyProvider();
 $("#seed").value = state.cfg.seed;
+if (state.cfg.size) $("#size").value = state.cfg.size;
 $("#negprompt").value = state.cfg.negative || DEFAULT_NEGATIVE;
 setLang(state.lang);
 loadData();

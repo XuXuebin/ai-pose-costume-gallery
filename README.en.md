@@ -108,6 +108,35 @@ Both original galleries send `Access-Control-Allow-Origin: *`, so the browser ca
 bytes cross-origin** and convert them into whatever the API needs (multipart files / base64) —
 without putting any image into this repository.
 
+### Local Antigravity proxy (recommended)
+
+If you run the Antigravity OpenAI-compatible proxy locally (default `http://127.0.0.1:8045/v1`),
+click **Quick presets → Local Antigravity proxy** to fill everything in:
+
+```
+Endpoint    http://127.0.0.1:8045/v1
+API key     sk-antigravity
+Model       gemini-3.1-flash-image
+Quality     hd
+```
+
+- **Load models** calls `GET /v1/models` and fills the suggestions with whatever the proxy exposes
+  (23 models on this machine).
+- **Size** accepts any `WIDTHxHEIGHT` (the proxy derives the aspect ratio itself); 1:1 / 2:3 / 3:4 /
+  16:9 quick chips sit next to it.
+- Reference images are downscaled to 896 px on the long edge and re-encoded as JPEG in the browser
+  (line art 400 KB → 61 KB), which makes uploads much faster.
+
+> ⚠️ **Two things measured in practice**
+> 1. The hosted Pages site is **https**, so the browser applies **Private Network Access** to
+>    `http://127.0.0.1` and blocks it. To use a local proxy, open the page from a **local preview**:
+>    `cd site && python3 -m http.server 8899` → `http://127.0.0.1:8899/`.
+>    The interface detects a local endpoint and says so.
+> 2. The proxy's account pool contains **region-locked** accounts that randomly answer
+>    `User location is not supported for the API use.`, and **three** reference images can hang for
+>    a long time. In practice **two (pose + costume) is the most reliable**, taking ~60–90 s.
+>    The UI has an 180 s timeout with a live timer, and a "another one" button to retry.
+
 ### Four image providers
 
 | Provider | Key | Multi-reference | Notes |

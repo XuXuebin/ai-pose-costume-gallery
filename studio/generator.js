@@ -43,13 +43,49 @@ const PROVIDERS = {
 
 /* ---------------- 工具 ---------------- */
 
-async function refToFile(ref) {
-  if (ref.file) return ref.file;
-  const r = await fetch(ref.url, { mode: "cors" });
-  if (!r.ok) throw new Error(`取参考图失败 ${ref.name}：HTTP ${r.status}`);
-  const blob = await r.blob();
-  const ext = (blob.type.split("/")[1] || "png").split("+")[0];
-  return new File([blob], `${ref.name}.${ext}`, { type: blob.type || "image/png" });
+/* 参考图 → File。先等比压到 maxDim，再上传：线稿用 PNG，照片用 JPEG。
+   原站两个图库都带 Access-Control-Allow-Origin: *，所以 crossOrigin=anonymous
+   不会把 canvas 弄脏，可以安全地读像素再编码。 */
+async function refToFile(ref, maxDim = 896) {
+  if (ref.file && ref.file.size <= 300 * 1024) return ref.file;   // 小文件原样上传
+
+  const src = ref.url || URL.createObjectURL(ref.file);
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  await new Promise((res, rej) => {
+    img.onload = res;
+    img.onerror = () => rej(new Error(`参考图加载失败：${ref.name}（跨域或文件损坏）`));
+    img.src = src;
+  });
+  const scale = Math.min(1, maxDim / Math.max(img.naturalWidth || 1, img.naturalHeight || 1));
+  const w = Math.max(1, Math.round((img.naturalWidth || maxDim) * scale));
+  const h = Math.max(1, Math.round((img.naturalHeight || maxDim) * scale));
+  const cv = document.createElement("canvas");
+  cv.width = w; cv.height = h;
+  cv.getContext("2d").drawImage(img, 0, 0, w, h);
+  // 统一转 JPEG：同样画质下比 PNG 小 5~10 倍（线稿 400KB → 43KB），上传快很多
+  const blob = await new Promise(r => cv.toBlob(r, "image/jpeg", 0.92));
+  if (!blob) throw new Error(`参考图转换失败：${ref.name}`);
+  return new File([blob], `${ref.name}.jpg`, { type: "image/jpeg" });
+}
+
+/* 带超时的 fetch：本机代理出图可能要 1~2 分钟，甚至挂起 */
+async function fetchWithTimeout(url, opts = {}, ms = 180000) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms);
+  try {
+    return await fetch(url, { ...opts, signal: ctl.signal });
+  } catch (e) {
+    if (e && e.name === "AbortError") {
+      throw new Error(
+        `请求超时（${Math.round(ms / 1000)} 秒）。\n` +
+        `本机代理在多张参考图时偶尔会挂起，可以先移除「人像参考图」只发 2 张再试，` +
+        `或换一个种子重试。`);
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function blobToDataURL(blob) {
@@ -78,7 +114,14 @@ async function extractImage(resp) {
   if (ct.startsWith("image/")) return await resp.blob();
   const text = await resp.text();
   let json;
-  try { json = JSON.parse(text); } catch { throw new Error("接口返回的不是 JSON：" + text.slice(0, 200)); }
+  try {
+    json = JSON.parse(text);
+  } catch {
+    // 上游代理常直接返回纯文本错误
+    const m = text.match(/"message"\s*:\s*"([^"]+)"/);
+    const msg = m ? m[1] : text.slice(0, 300);
+    throw new Error(msg);
+  }
   const pick = (o) => {
     if (!o || typeof o !== "object") return null;
     if (typeof o.url === "string" && o.url) return o.url;
@@ -137,7 +180,8 @@ function describeHttp(status, who) {
 /* ------------------------------------------------------------ 生成入口 */
 async function generate(cfg, { onStage } = {}) {
   const { provider, endpoint, apiKey, model, prompt, negativePrompt,
-          width, height, seed, references = [], referer } = cfg;
+          width, height, seed, references = [], referer,
+          quality = "", size = `${width}x${height}`, n = 1 } = cfg;
 
   const p = PROVIDERS[provider];
   if (!p) throw new Error("未知的生图接口：" + provider);
@@ -154,7 +198,7 @@ async function generate(cfg, { onStage } = {}) {
     if (negativePrompt) url.searchParams.set("negative", negativePrompt);
     if (referer) url.searchParams.set("referrer", referer);
     onStage && onStage("request");
-    const resp = await fetch(url, { mode: "cors" });
+    const resp = await fetchWithTimeout(url, { mode: "cors" }, 180000);
     if (!resp.ok) throw new Error(describeHttp(resp.status, "Pollinations"));
     return await extractImage(resp);
   }
@@ -168,8 +212,10 @@ async function generate(cfg, { onStage } = {}) {
       const fd = new FormData();
       fd.append("model", model || "gpt-image-1");
       fd.append("prompt", prompt);
-      fd.append("size", `${width}x${height}`);
-      fd.append("n", "1");
+      fd.append("size", size);
+      fd.append("n", String(n));
+      fd.append("response_format", "b64_json");
+      if (quality) fd.append("quality", quality);
       if (negativePrompt) fd.append("negative_prompt", negativePrompt);
       for (const ref of references) {
         const file = await refToFile(ref);
@@ -177,16 +223,20 @@ async function generate(cfg, { onStage } = {}) {
       }
       const headers = {};
       if (apiKey) headers["Authorization"] = "Bearer " + apiKey;
-      const resp = await fetch(base + "/images/edits", { method: "POST", body: fd, headers });
+      const resp = await fetchWithTimeout(base + "/images/edits", { method: "POST", body: fd, headers });
       if (!resp.ok) throw new Error(describeHttp(resp.status, "接口") + "\n" + (await resp.text()).slice(0, 300));
       return await extractImage(resp);
     }
 
     const headers = { "Content-Type": "application/json" };
     if (apiKey) headers["Authorization"] = "Bearer " + apiKey;
-    const resp = await fetch(base + "/images/generations", {
+    const resp = await fetchWithTimeout(base + "/images/generations", {
       method: "POST", headers,
-      body: JSON.stringify({ model, prompt, size: `${width}x${height}`, n: 1 }),
+      body: JSON.stringify({
+        model, prompt, size, n,
+        quality: quality || undefined,
+        response_format: "b64_json",
+      }),
     });
     if (!resp.ok) throw new Error(describeHttp(resp.status, "接口") + "\n" + (await resp.text()).slice(0, 300));
     return await extractImage(resp);
@@ -216,7 +266,7 @@ async function generate(cfg, { onStage } = {}) {
     };
     if (negativePrompt) body.generationConfig.negativePrompt = negativePrompt;
     onStage && onStage("request");
-    const resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+    const resp = await fetchWithTimeout(url, { method: "POST", headers, body: JSON.stringify(body) });
     if (!resp.ok) throw new Error(describeHttp(resp.status, "Gemini") + "\n" + (await resp.text()).slice(0, 300));
     return await extractImage(resp);
   }
@@ -238,7 +288,7 @@ async function generate(cfg, { onStage } = {}) {
   onStage && onStage("request");
   const headers = { "Content-Type": "application/json" };
   if (apiKey) headers["Authorization"] = "Bearer " + apiKey;
-  const resp = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(payload) });
+  const resp = await fetchWithTimeout(endpoint, { method: "POST", headers, body: JSON.stringify(payload) });
   if (!resp.ok) throw new Error(describeHttp(resp.status, "接口") + "\n" + (await resp.text()).slice(0, 300));
   return await extractImage(resp);
 }
@@ -250,4 +300,27 @@ function aspectFor(w, h) {
   if (r < 0.95) return "3:4";
   if (r > 1.05) return "4:3";
   return "1:1";
+}
+
+
+/* ------------------------------------------------------------ 辅助 */
+
+/** 从 OpenAI 兼容接口读取模型列表（用于填 datalist） */
+async function fetchModels(endpoint, apiKey) {
+  const base = endpoint.replace(/\/+$/, "");
+  const url = base.endsWith("/v1") ? base + "/models" : base + "/v1/models";
+  const headers = {};
+  if (apiKey) headers["Authorization"] = "Bearer " + apiKey;
+  const resp = await fetchWithTimeout(url, { headers }, 20000);
+  if (!resp.ok) throw new Error("读取模型列表失败：HTTP " + resp.status);
+  const j = await resp.json();
+  return (j.data || []).map(m => m.id).filter(Boolean);
+}
+
+/** 判断地址是否指向本机（本机代理在 https 页面上会被浏览器 Private Network Access 拦截） */
+function isLocalEndpoint(endpoint) {
+  try {
+    const u = new URL(endpoint);
+    return /^(localhost|127\.0\.0\.1|\[?::1\]?|0\.0\.0\.0)$/.test(u.hostname);
+  } catch { return false; }
 }
