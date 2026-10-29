@@ -33,7 +33,7 @@
 仓库根目录的 `index.html` 就是工作台，`galleries/` 下是两个独立图库。
 
 ```bash
-git clone https://github.com/<你的账号>/ai-pose-costume-gallery.git
+git clone https://github.com/XuXuebin/ai-pose-costume-gallery.git
 cd ai-pose-costume-gallery
 python3 -m http.server 8899
 # 打开 http://127.0.0.1:8899/
@@ -53,12 +53,16 @@ python3 -m http.server 8899
 ```bash
 git init && git add . && git commit -m "feat: 姿势×服装统一工作台"
 git branch -M main
-git remote add origin git@github.com:<你的账号>/ai-pose-costume-gallery.git
+git remote add origin git@github.com:XuXuebin/ai-pose-costume-gallery.git
 git push -u origin main
 ```
 
-然后在仓库 **Settings → Pages → Source** 选择 **GitHub Actions**，
-部署完成后访问 `https://<你的账号>.github.io/ai-pose-costume-gallery/`。
+然后在仓库 **Settings → Pages → Source** 选择 **GitHub Actions**。
+
+> 🟢 **本仓库已上线**（GitHub Actions 自动部署）：
+> **工作台** https://xuxuebin.github.io/ai-pose-costume-gallery/
+> **姿势库** https://xuxuebin.github.io/ai-pose-costume-gallery/galleries/pose/
+> **服装库** https://xuxuebin.github.io/ai-pose-costume-gallery/galleries/costume/
 
 也可用 Cloudflare Pages / 对象存储 / Nginx：`site` 不需要构建命令，仓库根目录就是发布目录。
 

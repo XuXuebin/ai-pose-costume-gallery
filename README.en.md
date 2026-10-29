@@ -35,7 +35,7 @@ Interface language: **Chinese / English / 日本語**, switchable at any time.
 `index.html` in the repository root is the studio; `galleries/` holds the two standalone libraries.
 
 ```bash
-git clone https://github.com/<your-account>/ai-pose-costume-gallery.git
+git clone https://github.com/XuXuebin/ai-pose-costume-gallery.git
 cd ai-pose-costume-gallery
 python3 -m http.server 8899
 # open http://127.0.0.1:8899/
@@ -58,12 +58,16 @@ python3 -m http.server 8899
 ```bash
 git init && git add . && git commit -m "feat: pose x costume studio"
 git branch -M main
-git remote add origin git@github.com:<your-account>/ai-pose-costume-gallery.git
+git remote add origin git@github.com:XuXuebin/ai-pose-costume-gallery.git
 git push -u origin main
 ```
 
-Then go to **Settings → Pages → Source → GitHub Actions**. Once the workflow finishes, the site is
-live at `https://<your-account>.github.io/ai-pose-costume-gallery/`.
+Then go to **Settings → Pages → Source → GitHub Actions**.
+
+> 🟢 **This repository is live** (deployed automatically by GitHub Actions):
+> **Studio** https://xuxuebin.github.io/ai-pose-costume-gallery/
+> **Pose library** https://xuxuebin.github.io/ai-pose-costume-gallery/galleries/pose/
+> **Costume library** https://xuxuebin.github.io/ai-pose-costume-gallery/galleries/costume/
 
 Cloudflare Pages / object storage / Nginx work too — there is no build step; the repository root
 *is* the publish directory.

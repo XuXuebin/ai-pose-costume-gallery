@@ -34,7 +34,7 @@
 リポジトリ直下の `index.html` がスタジオ、`galleries/` に 2 つの独立したギャラリーがあります。
 
 ```bash
-git clone https://github.com/<あなたのアカウント>/ai-pose-costume-gallery.git
+git clone https://github.com/XuXuebin/ai-pose-costume-gallery.git
 cd ai-pose-costume-gallery
 python3 -m http.server 8899
 # http://127.0.0.1:8899/ を開く
@@ -55,12 +55,16 @@ python3 -m http.server 8899
 ```bash
 git init && git add . && git commit -m "feat: ポーズ×衣装 統合スタジオ"
 git branch -M main
-git remote add origin git@github.com:<あなたのアカウント>/ai-pose-costume-gallery.git
+git remote add origin git@github.com:XuXuebin/ai-pose-costume-gallery.git
 git push -u origin main
 ```
 
-その後 **Settings → Pages → Source** で **GitHub Actions** を選ぶと、
-`https://<あなたのアカウント>.github.io/ai-pose-costume-gallery/` で公開されます。
+その後 **Settings → Pages → Source** で **GitHub Actions** を選びます。
+
+> 🟢 **本リポジトリは公開済みです**（GitHub Actions で自動デプロイ）：
+> **スタジオ** https://xuxuebin.github.io/ai-pose-costume-gallery/
+> **ポーズ集** https://xuxuebin.github.io/ai-pose-costume-gallery/galleries/pose/
+> **衣装集** https://xuxuebin.github.io/ai-pose-costume-gallery/galleries/costume/
 
 Cloudflare Pages / オブジェクトストレージ / Nginx にも対応しています。ビルドコマンドは不要で、
 リポジトリのルートがそのまま公開ディレクトリになります。
