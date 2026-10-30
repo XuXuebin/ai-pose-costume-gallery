@@ -15,7 +15,8 @@ def check(cond, msg):
 
 # ---------- 目录 ----------
 for p in ["index.html", "studio/studio.css", "studio/studio.js", "studio/i18n.js",
-          "studio/generator.js", "galleries/pose/index.html", "galleries/costume/index.html",
+          "studio/generator.js", "studio/zip.js", "studio/pipeline.js",
+          "galleries/pose/index.html", "galleries/depth/index.html", "galleries/costume/index.html",
           "data/pose.json", "data/costume.json",
           "README.md", "README.en.md", "README.ja.md", "LICENSE", "NOTICE.md"]:
     check((ROOT / p).exists(), f"缺少文件：{p}")
@@ -60,8 +61,12 @@ else:
     print("  （未启用本地素材副本，图片全部引用原站）")
 
 # ---------- 页面里的路径引用 ----------
-ORIGINS = ("https://ai-pose-gallery.pages.dev/", "https://ai-costume-gallery.pages.dev/")
-for page in ("galleries/pose/index.html", "galleries/costume/index.html"):
+ORIGINS = (
+    "https://ai-pose-gallery.pages.dev/",
+    "https://ai-pose-depth-gallery.pages.dev/",
+    "https://ai-costume-gallery.pages.dev/",
+)
+for page in ("galleries/pose/index.html", "galleries/depth/index.html", "galleries/costume/index.html"):
     html = (ROOT / page).read_text(encoding="utf-8")
     refs = set(re.findall(r'"(?:缩略图|图像|原图)": "([^"]+)"', html))
     bad = [r for r in refs if not (r.startswith("http") or r.startswith("../"))]
@@ -78,7 +83,7 @@ for page in ("galleries/pose/index.html", "galleries/costume/index.html"):
 
 # ---------- 不残留原站公开聊天链接 ----------
 SHIP = ["index.html", "NOTICE.md", "README.md", "README.en.md", "README.ja.md",
-        "galleries/pose/index.html", "galleries/costume/index.html",
+        "galleries/pose/index.html", "galleries/depth/index.html", "galleries/costume/index.html",
         "studio/studio.js", "studio/i18n.js", "studio/studio.css", "studio/generator.js"]
 for f in SHIP:
     txt = (ROOT / f).read_text(encoding="utf-8")

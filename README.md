@@ -19,11 +19,78 @@
 
 | | 内容 | 数量 |
 |---|---|---|
-| 🧍 **姿势库** | 无面部灰色人偶线稿（3:4），每个姿势 5 个角度 | 288 组 / **1,439 张** |
-| 👗 **服装库** | 不含人物的纯服装图片（2:3），8 个分类 | **1,407 套** |
-| 🎨 **统一工作台** | 姿势参考图 + 服装参考图 + 人像参考图 → 图生图 | 4 种接口 |
+| 🧍 **姿势库** POSE-DB-01 | 无面部灰色人偶**线稿**（3:4），每个姿势 5 个角度 | 288 组 / **1,439 张** |
+| 🕳️ **深度库** POSE-DB-02 | 同一批姿势的**深度图**（3:4），与线稿逐张对应 | 288 组 / **1,439 张** |
+| 👗 **服装库** COSTUME-DB-01 | 不含人物的纯服装图片（2:3），8 个分类 | **1,407 套** |
+| 🎨 **统一工作台** | 姿势线稿 + 姿势深度 + 服装 + 人像 → 图生图 / 条件包导出 | 4 种接口 |
 
 界面语言：**中文 / English / 日本語** 三语可切换。
+
+---
+
+## 三个库，一条条件管线
+
+这三个库不是三本独立的相册，而是**同一条生成管线上的三种条件信号**：
+
+| 角色 | 库 | 落到管线里的哪一步 |
+|---|---|---|
+| 姿势 | POSE-DB-01 线稿 | ControlNet **openpose** / lineart / scribble |
+| 深度 | POSE-DB-02 深度图 | ControlNet **depth** |
+| 服装 | COSTUME-DB-01 服装图 | IP-Adapter / T2I-Adapter 参考图 |
+| 人像 | 本地上传 | IP-Adapter FaceID / InstantID / PuLID |
+
+**关键事实：姿势库与深度库是同一批 288 组姿势 × 5 个角度的两种渲染。**
+ID 集合、顺序、姿势编号、角度、分类、姿势名**逐条严格相同**——这是机器可验证的（见下文质检工具），
+不是"看起来像"。所以在工作台里选一个姿势，**线稿与深度图会同时就位**，构成一对可直接喂给
+openpose + depth 双 ControlNet 的条件图。
+
+### 深度图的实测参数
+
+| 项 | 实测值 |
+|---|---|
+| 格式 | 8-bit 灰度 PNG，900×1200 |
+| 极性 | **近 = 白，远 = 黑** |
+| 证据 | 躯干均值 138.3 > 顶部背景 59.8（60 张样本 97% 成立）；A/B 对照：线稿墨迹落在亮区 0.702 vs 暗区 0.292 |
+| 结论 | 与 **MiDaS / ControlNet depth 惯例一致**，可直接当 depth 条件图用，**不需要反相** |
+| 来源 | 3D 人偶渲染（不是从线稿估计），所以与线稿逐像素对齐 |
+
+> 极性搞反是这类素材最常见的静默故障——图能生成，但空间关系全反。所以这项结论是**测出来的**，不是抄来的。
+
+### 导出「条件包」
+
+选好素材后点 **「导出条件包（ComfyUI / A1111）」**，直接得到一个 zip：
+
+```
+conditioning-pack.zip
+├── pack.json              元数据：每个参考图的角色 / 来源库 / 原始 URL / 模型建议 / 种子
+├── comfyui-workflow.json  ComfyUI API 格式工作流（openpose + depth 双 ControlNet 已连好）
+├── a1111-prompt.txt       A1111 / Forge 可直接粘贴的提示词与参数
+├── fetch-references.sh    把参考图抓到 ComfyUI 的 input 目录
+└── README.txt             用法说明
+```
+
+工作流里已经串好 `LoadImage → ControlNetLoader → ControlNetApplyAdvanced`（线稿与深度各一路），
+接上 `KSampler → VAEDecode → SaveImage`。服装与人像走 IP-Adapter，节点名随插件而变，
+所以只给权重建议（SD1.5 / SDXL 各一套），不硬塞进图里。
+
+> ⚠️ **这份 ComfyUI 工作流是模板，从未在真实 ComfyUI 实例上跑通验证。**
+> 它按 ComfyUI 官方 API 格式生成，但 `ckpt_name` 是占位符、ControlNet 权重名按 SD 1.5 给、
+> IP-Adapter 节点因插件而异未写入。**请自行测试后再投入正式出图**——
+> 导出的 `README.txt` 里附了逐条自测清单（参考图是否抓到 → 工作流能否无红节点载入 →
+> 只开 openpose 骨架是否对 → 再开 depth 遮挡是否反转 → 服装/人像是否接近参考）。
+> 素材本身是验证过的（配对、极性、离群，见下），但**管线这一段没有**。
+
+### 质检：除了你我，还有什么能证明结果是对的
+
+`tools/verify_library.py` 把上面所有结论变成**可复现、可进 CI 的断言**：
+
+```bash
+python3 tools/verify_library.py            # 离线：清单 / 配对 / 极性 / 离群 / 页面
+python3 tools/verify_library.py --sample 200 --online   # 加像素抽样 + sha256 对原站抽检
+```
+
+当前结论：**15 项全部通过，0 失败**（含 ID 集合一致、顺序一致、元数据逐条一致、
+每条姿势都挂上深度通道、极性 A/B 判别、四个系列主体面积无 3σ 离群、三个页面无残留链接）。
 
 ---
 
@@ -183,23 +250,29 @@ ai-pose-costume-gallery/
 ├── studio/
 │   ├── studio.css          工作台样式
 │   ├── i18n.js             中 / 英 / 日 三语文案
-│   ├── generator.js        生图 API 适配层（Pollinations / OpenAI / 自定义）
-│   └── studio.js           选图、生成、图库逻辑
+│   ├── generator.js        生图 API 适配层（Pollinations / OpenAI / Gemini / 自定义）
+│   ├── pipeline.js         条件包构建（ComfyUI 工作流 + A1111 提示词 + 元数据）
+│   ├── zip.js              零依赖 ZIP 打包器
+│   └── studio.js           选图、通道切换、生成、导出、图库逻辑
 ├── galleries/
-│   ├── pose/index.html     姿势库（含 A4 打印排版）
+│   ├── pose/index.html     姿势库（线稿，含 A4 打印排版）
+│   ├── depth/index.html    深度库（深度图）
 │   └── costume/index.html  服装库
 │                            ↑ 图片路径全部指向原站，仓库内不放图片
 ├── data/
-│   ├── pose.json           姿势数据（供工作台选图）
-│   └── costume.json        服装数据（供工作台选图）
+│   ├── manifest.json       三库清单：来源 / 许可 / 计数 / 深度技术参数 / 配对关系
+│   ├── pose.json           姿势数据（已配对深度双通道）
+│   ├── pose-depth.json     深度数据
+│   └── costume.json        服装数据
 ├── docs/                   演示图片（README 用）
 │   ├── demo-studio.webp    工作台三栏全景
 │   ├── demo-refs.webp      参考图区特写
 │   └── demo-result.webp    生成结果示例
 ├── tools/
-│   ├── sync.py             从两个源项目同步 → 生成 galleries/ 与 data/
+│   ├── sync.py             从三个源项目同步 → 生成 galleries/ 与 data/
 │   ├── pose_terms.json     姿势术语英译表
 │   ├── fetch_originals.py  按需下载原尺寸 PNG（离线用）
+│   ├── verify_library.py   ★ 三库一致性质检（配对 / 极性 / 离群 / sha256）
 │   └── verify.py           数据与路径完整性校验
 ├── .github/workflows/pages.yml   GitHub Pages 自动部署
 ├── NOTICE.md               素材版权与原始来源

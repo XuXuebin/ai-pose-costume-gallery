@@ -28,6 +28,77 @@
 
 ---
 
+## 3 つのライブラリ、1 本の条件パイプライン
+
+これらは 3 枚の独立したアルバムではなく、**同じパイプライン上の 3 種の条件信号**です。
+
+| 役割 | ライブラリ | パイプライン上の位置 |
+|---|---|---|
+| ポーズ | POSE-DB-01 線画 | ControlNet **openpose** / lineart / scribble |
+| 深度 | POSE-DB-02 深度マップ | ControlNet **depth** |
+| 衣装 | COSTUME-DB-01 衣装画像 | IP-Adapter / T2I-Adapter リファレンス |
+| 人物 | ローカルアップロード | IP-Adapter FaceID / InstantID / PuLID |
+
+**要点：ポーズ集と深度集は、同じ 288 ポーズ × 5 アングルを 2 通りでレンダリングしたものです。**
+ID 集合・順序・ポーズ番号・アングル・カテゴリ・ポーズ名は**1 件ずつ完全に一致**します。
+これは「よく似ている」ではなく**機械的に検証可能**です（後述の検証ツール参照）。
+したがってスタジオでポーズを 1 つ選ぶと、**線画と深度マップが同時に揃い**、
+openpose + depth の ControlNet ペアとしてそのまま使えます。
+
+### 深度マップの実測値
+
+| 項目 | 実測値 |
+|---|---|
+| 形式 | 8-bit グレースケール PNG、900×1200 |
+| 極性 | **近 = 白、遠 = 黒** |
+| 根拠 | 胴体平均 138.3 > 上部背景 59.8（60 枚中 97% が成立）。A/B 判定：線稿の線が明るい領域に入る比率 0.702 対 暗い領域 0.292 |
+| 結論 | **MiDaS / ControlNet の depth 慣習と一致**。そのまま depth 条件図として使え、**反転は不要** |
+| 出自 | 3D 人形からのレンダリング（線画からの推定ではない）ため、線画とピクセル単位で一致 |
+
+> 極性の反転は这类の素材で最も多い「静かに壊れる」故障です。画像は生成できるのに空間関係が
+> すべて逆になります。したがってこの結論は**測ったもの**であり、借りたものではありません。
+
+### 条件パッケージの書き出し
+
+素材选定後、「**条件パッケージを書き出す（ComfyUI / A1111）**」を押すと zip が入手できます。
+
+```
+conditioning-pack.zip
+├── pack.json              メタデータ：各参考画像の役割 / 出典 / 元 URL / モデル推奨 / シード
+├── comfyui-workflow.json  ComfyUI API 形式ワークフロー（openpose + depth の 2 本を接続済み）
+├── a1111-prompt.txt       A1111 / Forge に貼り付けられるプロンプトとパラメータ
+├── fetch-references.sh    参考画像を ComfyUI の input へ取得
+└── README.txt             使い方
+```
+
+ワークフローには `LoadImage → ControlNetLoader → ControlNetApplyAdvanced`（各チャネル 1 本）が
+`KSampler → VAEDecode → SaveImage` までつながって入っています。衣装と人物は IP-Adapter を経由
+するため、プラグインによりノード名が変わる関係で**グラフには入れず**、重みの推奨
+（SD1.5 / SDXL それぞれ）に留めています。
+
+> ⚠️ **この ComfyUI ワークフローはテンプレートであり、実機の ComfyUI で一度も実行検証していません。**
+> ComfyUI 公式 API 形式に沿って生成していますが、`ckpt_name` はプレースホルダ、
+> ControlNet の重み名は SD 1.5 前提、IP-Adapter ノードはプラグイン依存のため未収録です。
+> **ご自身でテストしてから本番利用してください**——書き出した `README.txt` には
+> 確認チェックリスト一式（参考画像が input/ に入るか → 赤の欠損ノードなく読み込めるか →
+> openpose だけで骨格が合うか → depth を足すと前後関係が反転しないか →
+> 衣装・人物が近くなるか）が入っています。
+> 素材そのものは検証済み（対応付け・極性・外れ値、下記）ですが、**パイプライン側は未検証**です。
+
+### 検証：結果の正しさを行儀よく示せるのは誰か
+
+`tools/verify_library.py` は上記の主張をすべて**再現可能で CI に載せられるアサーション**に変えます。
+
+```bash
+python3 tools/verify_library.py            # オフライン：manifest / 対応付け / 極性 / 外れ値 / ページ
+python3 tools/verify_library.py --sample 200 --online   # ＋画素サンプリングと sha256 抜き取り検査
+```
+
+現在の結果：**15 項目すべて合格・失敗 0**（ID 集合一致、順序一致、メタデータ 1 件ずつ一致、
+全ポーズに深度チャネル付与、極性 A/B 判定、4 シリーズすべて 3σ 外れ値なし、3 ページとも残留リンクなし）。
+
+---
+
 ## デモ
 
 ![統合スタジオ：3 カラムの作業画面](docs/demo-studio.webp)
@@ -209,9 +280,10 @@ ai-pose-costume-gallery/
 │   ├── demo-refs.webp      参考画像スロットのクローズアップ
 │   └── demo-result.webp    生成結果のサンプル
 ├── tools/
-│   ├── sync.py             2 つの元プロジェクトから galleries/ と data/ を再生成
+│   ├── sync.py             3 つの元ライブラリから galleries/ と data/ を再生成
 │   ├── pose_terms.json     ポーズ用語の英訳表
 │   ├── fetch_originals.py  原寸 PNG を必要に応じて取得（オフライン用）
+│   ├── verify_library.py   ★ 3 ライブラリ整合性検査（対応付け / 極性 / 外れ値 / sha256）
 │   └── verify.py           データとパスの整合性チェック
 ├── .github/workflows/pages.yml   GitHub Pages 自動デプロイ
 ├── NOTICE.md               素材の著作権と出典

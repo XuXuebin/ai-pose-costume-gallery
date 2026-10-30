@@ -20,6 +20,7 @@
   <nav class="nav">
     <a href="#studio" class="on" data-i18n="nav.studio">工作台</a>
     <a href="galleries/pose/" data-i18n="nav.pose">姿势库</a>
+    <a href="galleries/depth/" data-i18n="nav.depth">深度库</a>
     <a href="galleries/costume/" data-i18n="nav.costume">服装库</a>
   </nav>
   <a class="ghstar" href="https://github.com/XuXuebin/ai-pose-costume-gallery" target="_blank" rel="noopener noreferrer" title="在 GitHub 上 Star 这个仓库"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.918 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg><span>Star</span><em class="ghcount"></em></a>
@@ -35,6 +36,7 @@
   <p class="lead" data-i18n="hero.lead"></p>
   <ul class="hero-badges">
     <li data-i18n="hero.b1"></li>
+    <li data-i18n="hero.b1b"></li>
     <li data-i18n="hero.b2"></li>
     <li data-i18n="hero.b3"></li>
   </ul>
@@ -54,6 +56,11 @@
       <button class="linkbtn" type="button" data-clear="pose" data-i18n="pick.clear">清除选择</button>
     </header>
     <p class="pane-hint" data-i18n="pick.poseHint"></p>
+    <div class="seg" id="poseChannel" role="group" aria-label="pose channel">
+      <button type="button" data-ch="line" data-i18n="ch.line">线稿</button>
+      <button type="button" data-ch="depth" data-i18n="ch.depth">深度图</button>
+      <button type="button" data-ch="both" data-i18n="ch.both">双通道</button>
+    </div>
     <div class="filters">
       <input class="search" type="search" id="poseSearch" data-i18n-ph="pick.search" placeholder="搜索 ID / 名称 / 关键词" autocomplete="off">
       <select id="poseSeries" aria-label="series"></select>
@@ -182,6 +189,9 @@
     </div>
 
     <button class="btn primary big" type="button" id="runBtn" data-i18n="gen.run">生成图片</button>
+    <button class="btn big" type="button" id="exportPack" data-i18n="gen.export">导出条件包（ComfyUI / A1111）</button>
+    <p class="note warn untested" data-i18n="gen.exportUntested"></p>
+    <p class="note" id="exportNote" data-i18n="gen.exportNote"></p>
     <p class="note warn" data-i18n="gen.local"></p>
 
     <div class="result" id="result">
@@ -231,6 +241,8 @@
 </script>
 
 <script src="studio/i18n.js"></script>
+<script src="studio/zip.js"></script>
+<script src="studio/pipeline.js"></script>
 <script src="studio/generator.js"></script>
 <script src="studio/studio.js"></script>
 </body>

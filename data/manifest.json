@@ -1,0 +1,104 @@
+{
+ "schema": 1,
+ "repo": "XuXuebin/ai-pose-costume-gallery",
+ "site": "https://xuxuebin.github.io/ai-pose-costume-gallery/",
+ "assetPolicy": "CDN 引用原站，不镜像图片数据；不提供批量下载入口。",
+ "libraries": [
+  {
+   "key": "pose-line",
+   "db": "POSE-DB-01",
+   "title": {
+    "zh": "姿势集（线稿）",
+    "en": "Pose Library (Line Art)",
+    "ja": "ポーズ集（線画）"
+   },
+   "origin": "https://ai-pose-gallery.pages.dev/",
+   "counts": {
+    "images": 1439,
+    "poses": 288,
+    "angles": 5,
+    "series": 4,
+    "categories": 26
+   },
+   "data": "data/pose.json",
+   "gallery": "galleries/pose/",
+   "role": "ControlNet openpose / lineart / scribble 条件图",
+   "terms": [
+    "免费用于作品创作（含商用）",
+    "无需署名",
+    "禁止再分发图片本身"
+   ]
+  },
+  {
+   "key": "pose-depth",
+   "db": "POSE-DB-02",
+   "title": {
+    "zh": "深度集（深度图）",
+    "en": "Depth Library (Depth Maps)",
+    "ja": "深度集（-depth マップ）"
+   },
+   "origin": "https://ai-pose-depth-gallery.pages.dev/",
+   "counts": {
+    "images": 1439,
+    "poses": 288,
+    "angles": 5,
+    "series": 4,
+    "categories": 26
+   },
+   "data": "data/pose-depth.json",
+   "gallery": "galleries/depth/",
+   "role": "ControlNet depth 条件图",
+   "terms": [
+    "免费用于作品创作（含商用）",
+    "无需署名",
+    "禁止再分发图片本身",
+    "禁止一次性批量下载（含工具自动获取）"
+   ]
+  },
+  {
+   "key": "costume",
+   "db": "COSTUME-DB-01",
+   "title": {
+    "zh": "服装集",
+    "en": "Costume Library",
+    "ja": "衣装集"
+   },
+   "origin": "https://ai-costume-gallery.pages.dev/",
+   "counts": {
+    "images": 1407,
+    "categories": 8,
+    "series": 8
+   },
+   "data": "data/costume.json",
+   "gallery": "galleries/costume/",
+   "role": "IP-Adapter / 参考图（服装与配色）",
+   "terms": [
+    "免费用于作品创作（含商用）",
+    "无需署名",
+    "禁止再分发图片本身"
+   ]
+  }
+ ],
+ "posePairing": {
+  "line": "pose-line",
+  "depth": "pose-depth",
+  "relation": "id 完全一致、顺序一致、姿势编号/角度/分类/姿势名逐条相同",
+  "pairs": 1439,
+  "verifiedBy": "tools/verify_library.py"
+ },
+ "depthSpec": {
+  "format": "8-bit grayscale PNG",
+  "size": [
+   900,
+   1200
+  ],
+  "polarity": "near=white, far=black",
+  "polarityEvidence": "躯干均值 138.3 > 顶部背景 59.8（60 张样本，97% 成立）；A/B 对照：亮=近 precision 0.691 vs 暗=近 0.302",
+  "controlnet": "与 MiDaS / ControlNet depth 惯例一致（近处亮），可直接作为 depth 条件图",
+  "source": "3D 人偶渲染（非从线稿估计），故与线稿姿势逐像素对齐"
+ },
+ "checksum": {
+  "algorithm": "sha256",
+  "note": "抽样校验见 tools/verify_library.py --online"
+ }
+}

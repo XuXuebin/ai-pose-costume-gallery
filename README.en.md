@@ -21,11 +21,85 @@ browser.
 
 | | Content | Count |
 |---|---|---|
-| 🧍 **Pose library** | Faceless grey mannequin line art (3:4), 5 angles per pose | 288 poses / **1,439 images** |
-| 👗 **Costume library** | Outfit-only photos with no person (2:3), 8 categories | **1,407 outfits** |
-| 🎨 **Unified studio** | Pose reference + costume reference + person reference → img2img | 4 providers |
+| 🧍 **Pose library** POSE-DB-01 | Faceless grey mannequin **line art** (3:4), 5 angles per pose | 288 poses / **1,439 images** |
+| 🕳️ **Depth library** POSE-DB-02 | **Depth maps** of the very same poses (3:4), image-for-image with the line art | 288 poses / **1,439 images** |
+| 👗 **Costume library** COSTUME-DB-01 | Outfit-only photos with no person (2:3), 8 categories | **1,407 outfits** |
+| 🎨 **Unified studio** | Pose line art + pose depth + costume + person → img2img / conditioning-pack export | 4 providers |
 
 Interface language: **Chinese / English / 日本語**, switchable at any time.
+
+---
+
+## Three libraries, one conditioning pipeline
+
+These are not three unrelated albums — they are **three conditioning signals for the same pipeline**:
+
+| Role | Library | Where it lands in the pipeline |
+|---|---|---|
+| Pose | POSE-DB-01 line art | ControlNet **openpose** / lineart / scribble |
+| Depth | POSE-DB-02 depth maps | ControlNet **depth** |
+| Costume | COSTUME-DB-01 outfit photos | IP-Adapter / T2I-Adapter reference |
+| Person | your upload | IP-Adapter FaceID / InstantID / PuLID |
+
+**The key fact: the pose library and the depth library are the same 288 poses × 5 angles, rendered
+two different ways.** Their ID sets, ordering, pose numbers, angles, categories and pose names
+match **entry for entry** — and that is machine-verifiable (see the verification tool below), not
+just "they look similar". So picking one pose in the studio fills **both** the line-art slot and
+the depth slot at once, giving you a ready-to-use openpose + depth condition pair.
+
+### Measured properties of the depth maps
+
+| Property | Measured value |
+|---|---|
+| Format | 8-bit grayscale PNG, 900×1200 |
+| Polarity | **near = white, far = black** |
+| Evidence | torso mean 138.3 > background mean 59.8 (97% of 60 samples); A/B test: line-art ink lands in the bright region 0.702 vs 0.292 in the dark region |
+| Conclusion | Matches the **MiDaS / ControlNet depth convention** — usable directly as a depth condition, **no inversion needed** |
+| Provenance | Rendered from a 3D mannequin (not estimated from the line art), which is why it aligns pixel-for-pixel with the line art |
+
+> A flipped polarity is the classic silent failure with assets like these — images still generate,
+> but the spatial relationships come out inverted. So this conclusion is **measured**, not copied.
+
+### Exporting a conditioning pack
+
+Once you have your picks, click **"Export conditioning pack (ComfyUI / A1111)"** and get a zip:
+
+```
+conditioning-pack.zip
+├── pack.json              metadata: role / source library / original URL / model hints / seed
+├── comfyui-workflow.json  ComfyUI API-format workflow (openpose + depth ControlNets wired up)
+├── a1111-prompt.txt       paste-ready A1111 / Forge prompt and parameters
+├── fetch-references.sh    pull the reference images into ComfyUI's input directory
+└── README.txt             how to use it
+```
+
+The workflow already chains `LoadImage → ControlNetLoader → ControlNetApplyAdvanced` (one branch
+per pose channel) into `KSampler → VAEDecode → SaveImage`. Costume and person go through
+IP-Adapter, whose node names change per plugin, so those ship as weight recommendations
+(one set for SD 1.5, one for SDXL) instead of being baked into the graph.
+
+> ⚠️ **This ComfyUI workflow is a template. It has never been run on a real ComfyUI instance.**
+> It follows ComfyUI's official API format, but `ckpt_name` is a placeholder, the ControlNet
+> weight names assume SD 1.5, and the IP-Adapter nodes are omitted because their names vary
+> by plugin. **Please test it yourself before relying on it** — the exported `README.txt`
+> includes a step-by-step self-test checklist (do the references land in `input/` → does the
+> workflow load with no missing nodes → does the openpose branch alone reproduce the skeleton
+> → does adding depth flip the occlusion or not → do the costume/person references land).
+> The *assets* are verified (pairing, polarity, outliers — see below); the *pipeline* is not.
+
+### Verification: what proves the result is correct besides me and you
+
+`tools/verify_library.py` turns every claim above into a **reproducible assertion that can run in CI**:
+
+```bash
+python3 tools/verify_library.py            # offline: manifest / pairing / polarity / outliers / pages
+python3 tools/verify_library.py --sample 200 --online   # + pixel sampling and sha256 spot-checks
+```
+
+Current result: **15 checks pass, 0 failures** — including identical ID sets, identical ordering,
+entry-for-entry identical metadata, every pose carrying its depth channel, the A/B polarity
+discriminator, no 3σ outliers in subject area for any of the four series, and no leftover links on
+any of the three pages.
 
 ---
 
@@ -202,23 +276,29 @@ ai-pose-costume-gallery/
 ├── studio/
 │   ├── studio.css          Studio styles
 │   ├── i18n.js             Chinese / English / Japanese strings
-│   ├── generator.js        Image API layer (Pollinations / OpenAI / custom)
-│   └── studio.js           Picking, generation, gallery logic
+│   ├── generator.js        Image API layer (Pollinations / OpenAI / Gemini / custom)
+│   ├── pipeline.js         Conditioning-pack builder (ComfyUI workflow + A1111 prompt + metadata)
+│   ├── zip.js              Dependency-free ZIP writer
+│   └── studio.js           Picking, channel switching, generation, export, gallery logic
 ├── galleries/
-│   ├── pose/index.html     Pose library (with A4 print layout)
+│   ├── pose/index.html     Pose library (line art, with A4 print layout)
+│   ├── depth/index.html    Depth library (depth maps)
 │   └── costume/index.html  Costume library
 │                            ↑ every image path points at the original sites
 ├── data/
-│   ├── pose.json           Pose data (used by the studio)
-│   └── costume.json        Costume data (used by the studio)
+│   ├── manifest.json       Manifest of all three libraries: origin / terms / counts / depth spec / pairing
+│   ├── pose.json           Pose data (already paired with its depth channel)
+│   ├── pose-depth.json     Depth data
+│   └── costume.json        Costume data
 ├── docs/                   Demo images (used by this README)
 │   ├── demo-studio.webp    Full three-column workbench
 │   ├── demo-refs.webp      Close-up of the reference slots
 │   └── demo-result.webp    Example generated result
 ├── tools/
-│   ├── sync.py             Sync from the two source projects → galleries/ and data/
+│   ├── sync.py             Sync from the three source libraries → galleries/ and data/
 │   ├── pose_terms.json     English glossary for pose terms
 │   ├── fetch_originals.py  Download original-size PNGs on demand (offline use)
+│   ├── verify_library.py   ★ Three-library consistency check (pairing / polarity / outliers / sha256)
 │   └── verify.py           Data and path integrity check
 ├── .github/workflows/pages.yml   GitHub Pages deployment
 ├── NOTICE.md               Asset copyright and original sources

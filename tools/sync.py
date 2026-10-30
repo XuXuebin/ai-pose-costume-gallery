@@ -1,13 +1,21 @@
 #!/usr/bin/env python3
-"""把两个源项目（ai-pose-gallery / ai-costume-gallery）同步进统一仓库。
+"""把三个源库同步进统一仓库。
+
+源库：
+  ai-pose-gallery/          姿势集 POSE-DB-01（线稿）
+  ai-pose-gallery/depth-gallery/  深度集 POSE-DB-02（深度图）
+  ai-costume-gallery/       服装集 COSTUME-DB-01（服装）
 
 默认策略：**不搬运图片**，页面与数据里的素材路径一律指向原站（CDN 引用），
 这样仓库只有几十 KB，GitHub Pages 部署秒开。
 
 产出:
-  galleries/pose/index.html        姿势库页面
-  galleries/costume/index.html     服装库页面
-  data/pose.json  data/costume.json  供 Studio 选图使用
+  galleries/pose/index.html        姿势库（线稿）
+  galleries/depth/index.html       深度库（深度图）
+  galleries/costume/index.html     服装库
+  data/pose.json                   姿势数据（已配对深度双通道）
+  data/pose-depth.json  data/costume.json
+  data/manifest.json               三库清单（来源 / 许可 / 计数 / 深度技术参数）
 
 可选:
   --local-assets   把图片也复制/转换进 galleries/assets/（自包含离线版，约 237 MB）
@@ -25,9 +33,11 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 SRC_POSE = ROOT.parent / "ai-pose-gallery"
 SRC_COSTUME = ROOT.parent / "ai-costume-gallery"
+SRC_DEPTH = ROOT.parent / "ai-pose-gallery" / "depth-gallery"
 
 ORIGIN_POSE = "https://ai-pose-gallery.pages.dev"
 ORIGIN_COSTUME = "https://ai-costume-gallery.pages.dev"
+ORIGIN_DEPTH = "https://ai-pose-depth-gallery.pages.dev"
 
 
 # ---------------------------------------------------------------- 本地资源（可选）
@@ -289,6 +299,138 @@ def build_costume(local_assets=False):
         copy_dir(src_site / "thumbs", ROOT / "galleries" / "assets" / "costume" / "thumbs", "*.webp")
         copy_dir(src_site / "img", ROOT / "galleries" / "assets" / "costume" / "full", "*.webp")
 
+# ---------------------------------------------------------------- 深度姿势库 POSE-DB-02
+def build_depth(local_assets=False):
+    print("== 深度姿势库 ==")
+    src_site = SRC_DEPTH / "site"
+    if not src_site.exists():
+        sys.exit(f"找不到源项目：{src_site}")
+    items = json.load(open(src_site / "data.json", encoding="utf-8"))
+    for it in items:
+        it["缩略图"] = f"{ORIGIN_DEPTH}/" + it["缩略图"]
+        it["原图"] = f"{ORIGIN_DEPTH}/" + it["原图"]
+    json.dump(items, open(ROOT / "data" / "pose-depth.json", "w", encoding="utf-8"),
+              ensure_ascii=False, separators=(",", ":"))
+
+    html = (src_site / "index.html").read_text(encoding="utf-8")
+    html = patch_html(html, [
+        ("缩略图", "thumbs/", f"{ORIGIN_DEPTH}/thumbs/", {}),
+        ("原图", "img/", f"{ORIGIN_DEPTH}/img/", {}),
+    ])
+    html = strip_open_chat(
+        html, ORIGIN_DEPTH,
+        "原站：ai-pose-depth-gallery.pages.dev · 本页为简体中文本地化版本")
+    html = add_github(html)
+    out = ROOT / "galleries" / "depth" / "index.html"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(html, encoding="utf-8")
+    print(f"  {out.relative_to(ROOT)}: {len(html):,} 字节")
+
+
+# ---------------------------------------------------------------- 线稿 ↔ 深度 配对
+def merge_pose_channels():
+    """把深度图挂到线稿数据上：同一 id 即同一姿势，便于一次选出两个条件通道。"""
+    print("== 配对线稿 / 深度 ==")
+    line = json.load(open(ROOT / "data" / "pose.json", encoding="utf-8"))
+    depth = json.load(open(ROOT / "data" / "pose-depth.json", encoding="utf-8"))
+    dm = {x["id"]: x for x in depth}
+    missing = [x["id"] for x in line if x["id"] not in dm]
+    extra = [i for i in dm if i not in {x["id"] for x in line}]
+    if missing or extra:
+        sys.exit(f"配对失败：线稿缺 {len(missing)} 条（{missing[:3]}），深度多 {len(extra)} 条（{extra[:3]}）")
+    for it in line:
+        d = dm[it["id"]]
+        it["深度缩略图"] = d["缩略图"]
+        it["深度原图"] = d["原图"]
+    json.dump(line, open(ROOT / "data" / "pose.json", "w", encoding="utf-8"),
+              ensure_ascii=False, separators=(",", ":"))
+    print(f"  {len(line)} 条姿势已配对线稿 + 深度双通道")
+
+
+# ---------------------------------------------------------------- 清单
+def build_manifest():
+    """生成 data/manifest.json：三库来源、许可、计数、深度技术参数、质检结论。"""
+    print("== 生成清单 ==")
+    line = json.load(open(ROOT / "data" / "pose.json", encoding="utf-8"))
+    depth = json.load(open(ROOT / "data" / "pose-depth.json", encoding="utf-8"))
+    costume = json.load(open(ROOT / "data" / "costume.json", encoding="utf-8"))
+
+    def counts(items, idkey="id"):
+        # 姿势编号在不同系列间重复计数，须用「系列+编号+名称」复合键
+        poses = {(x.get("系列"), x.get("姿势编号"), x.get("姿势名")) for x in items}
+        return {
+            "images": len(items),
+            "poses": len(poses),
+            "angles": len({x["角度"] for x in items}),
+            "series": len({x["系列"] for x in items}),
+            "categories": len({x["分类"] for x in items}),
+        }
+
+    manifest = {
+        "schema": 1,
+        "repo": "XuXuebin/ai-pose-costume-gallery",
+        "site": "https://xuxuebin.github.io/ai-pose-costume-gallery/",
+        "assetPolicy": "CDN 引用原站，不镜像图片数据；不提供批量下载入口。",
+        "libraries": [
+            {
+                "key": "pose-line", "db": "POSE-DB-01",
+                "title": {"zh": "姿势集（线稿）", "en": "Pose Library (Line Art)", "ja": "ポーズ集（線画）"},
+                "origin": ORIGIN_POSE + "/",
+                "counts": counts(line),
+                "data": "data/pose.json",
+                "gallery": "galleries/pose/",
+                "role": "ControlNet openpose / lineart / scribble 条件图",
+                "terms": ["免费用于作品创作（含商用）", "无需署名", "禁止再分发图片本身"],
+            },
+            {
+                "key": "pose-depth", "db": "POSE-DB-02",
+                "title": {"zh": "深度集（深度图）", "en": "Depth Library (Depth Maps)", "ja": "深度集（-depth マップ）"},
+                "origin": ORIGIN_DEPTH + "/",
+                "counts": counts(depth),
+                "data": "data/pose-depth.json",
+                "gallery": "galleries/depth/",
+                "role": "ControlNet depth 条件图",
+                "terms": ["免费用于作品创作（含商用）", "无需署名", "禁止再分发图片本身",
+                          "禁止一次性批量下载（含工具自动获取）"],
+            },
+            {
+                "key": "costume", "db": "COSTUME-DB-01",
+                "title": {"zh": "服装集", "en": "Costume Library", "ja": "衣装集"},
+                "origin": ORIGIN_COSTUME + "/",
+                "counts": {"images": len(costume["items"]),
+                           "categories": len(costume["meta"]["cats"]),
+                           "series": len(costume["meta"]["cats"])},
+                "data": "data/costume.json",
+                "gallery": "galleries/costume/",
+                "role": "IP-Adapter / 参考图（服装与配色）",
+                "terms": ["免费用于作品创作（含商用）", "无需署名", "禁止再分发图片本身"],
+            },
+        ],
+        "posePairing": {
+            "line": "pose-line", "depth": "pose-depth",
+            "relation": "id 完全一致、顺序一致、姿势编号/角度/分类/姿势名逐条相同",
+            "pairs": len(line),
+            "verifiedBy": "tools/verify_library.py",
+        },
+        "depthSpec": {
+            "format": "8-bit grayscale PNG",
+            "size": [900, 1200],
+            "polarity": "near=white, far=black",
+            "polarityEvidence": "躯干均值 138.3 > 顶部背景 59.8（60 张样本，97% 成立）；"
+                                 "A/B 对照：亮=近 precision 0.691 vs 暗=近 0.302",
+            "controlnet": "与 MiDaS / ControlNet depth 惯例一致（近处亮），可直接作为 depth 条件图",
+            "source": "3D 人偶渲染（非从线稿估计），故与线稿姿势逐像素对齐",
+        },
+        "checksum": {
+            "algorithm": "sha256",
+            "note": "抽样校验见 tools/verify_library.py --online",
+        },
+    }
+    json.dump(manifest, open(ROOT / "data" / "manifest.json", "w", encoding="utf-8"),
+              ensure_ascii=False, indent=1)
+    print(f"  data/manifest.json: {len(manifest['libraries'])} 个库，"
+          f"{manifest['posePairing']['pairs']} 组配对")
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -297,7 +439,10 @@ def main():
     args = ap.parse_args()
     (ROOT / "data").mkdir(exist_ok=True)
     build_pose(args.local_assets)
+    build_depth(args.local_assets)
+    merge_pose_channels()
     build_costume(args.local_assets)
+    build_manifest()
     print("\n完成。用 tools/verify.py 校验。")
 
 

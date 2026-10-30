@@ -20,6 +20,7 @@ const state = {
   pose: [], costume: [],
   sel: { pose: null, costume: null },
   person: null,                       // {file, name, url}
+  channel: "both",                    // 姿势通道：line(线稿) | depth(深度) | both(双通道)
   view: {
     pose: { list: [], shown: 0 },
     costume: { list: [], shown: 0 },
@@ -135,7 +136,7 @@ function appendPose() {
   g.insertAdjacentHTML("beforeend", slice.map(x => `
     <button type="button" class="pick ${state.sel.pose && state.sel.pose.id === x.id ? "on" : ""}"
             role="option" data-pose="${esc(x.id)}" title="${esc(x["姿势名"])}">
-      <img loading="lazy" decoding="async" src="${esc(assetUrl(x["缩略图"]))}" alt="${esc(x["姿势名"])}">
+      <img loading="lazy" decoding="async" src="${esc(state.channel === "depth" ? x["深度缩略图"] : assetUrl(x["缩略图"]))}" alt="${esc(x["姿势名"])}">
       <span class="pk">${esc(x["姿势编号"])}</span>
     </button>`).join(""));
   v.shown += slice.length;
@@ -176,7 +177,10 @@ function renderPicked() {
   const p = state.sel.pose, c = state.sel.costume;
   $("#posePicked").innerHTML = p ? `
     <div class="selcard">
-      <img src="${esc(assetUrl(p["缩略图"]))}" alt="">
+      <div class="seldual">
+        <img src="${esc(assetUrl(p["缩略图"]))}" alt="" title="线稿">
+        ${p["深度缩略图"] ? `<img src="${esc(p["深度缩略图"])}" alt="" title="深度图">` : ""}
+      </div>
       <div class="selinfo">
         <b>${esc(p["姿势编号"])} · ${esc(p["姿势名"])}</b>
         <span>${esc(p["系列"])} · ${esc(p["角度"])} · ${esc(p["分类"])}</span>
@@ -204,21 +208,37 @@ function renderPicked() {
 function buildReferences() {
   const out = [];
   const p = state.sel.pose, c = state.sel.costume;
-  if (p) out.push({ role: "pose", name: p.id, url: p["原图"], thumb: assetUrl(p["缩略图"]),
-                    label: `${p["姿势编号"]} · ${p["姿势名"]}`, from: "pose" });
-  if (c) out.push({ role: "costume", name: c.id, url: c["图像"], thumb: assetUrl(c["缩略图"]),
-                    label: `${c["id"]} · ${c["分类"]}`, from: "costume" });
-  if (state.person) out.push({ role: "person", name: state.person.name, file: state.person.file,
-                    thumb: state.person.url, label: state.person.name, from: "person" });
+  const ch = state.channel;
+  if (p && ch !== "depth") {
+    out.push({ role: "pose-lineart", name: p.id, id: p.id, url: p["原图"], thumb: assetUrl(p["缩略图"]),
+               label: `${p["姿势编号"]} · ${p["姿势名"]}`, lib: "POSE-DB-01" });
+  }
+  if (p && ch !== "line" && p["深度原图"]) {
+    out.push({ role: "pose-depth", name: p.id, id: p.id, url: p["深度原图"], thumb: p["深度缩略图"],
+               label: `${p["姿势编号"]} · 深度图`, lib: "POSE-DB-02" });
+  }
+  if (c) {
+    out.push({ role: "costume", name: c.id, id: c.id, url: c["图像"], thumb: assetUrl(c["缩略图"]),
+               label: `${c["id"]} · ${c["分类"]}`, lib: "COSTUME-DB-01" });
+  }
+  if (state.person) {
+    out.push({ role: "person", name: state.person.name, file: state.person.file,
+               thumb: state.person.url, label: state.person.name, lib: "本地上传" });
+  }
   return out;
+}
+
+function renderChannel() {
+  $$("#poseChannel button").forEach(b => b.classList.toggle("on", b.dataset.ch === state.channel));
 }
 
 function renderRefs() {
   const refs = buildReferences();
   const slots = [
-    { key: "pose", no: 1, title: t("gen.slotPose", state.lang), from: t("gen.slotFrom", state.lang) },
-    { key: "costume", no: 2, title: t("gen.slotCostume", state.lang), from: t("gen.slotFromCostume", state.lang) },
-    { key: "person", no: 3, title: t("gen.slotPerson", state.lang), from: t("gen.slotFromUpload", state.lang) },
+    { key: "pose-lineart", no: 1, title: t("gen.slotPose", state.lang) },
+    { key: "pose-depth", no: 2, title: t("gen.slotDepth", state.lang) },
+    { key: "costume", no: 3, title: t("gen.slotCostume", state.lang) },
+    { key: "person", no: 4, title: t("gen.slotPerson", state.lang) },
   ];
   const html = slots.map(sl => {
     const r = refs.find(x => x.role === sl.key);
@@ -232,9 +252,10 @@ function renderRefs() {
           <div class="slot-cap"><b>${sl.no}. ${esc(sl.title)}</b><span>${esc(t("gen.slotEmpty", state.lang))}</span></div>
         </div>`;
       }
+      const hint = sl.key.indexOf("pose") === 0 ? t("gen.slotAutoPose", state.lang) : t("gen.slotEmpty", state.lang);
       return `<div class="slot slot-empty" data-slot="${sl.key}">
         <div class="slot-img"><span class="slot-ph">${sl.no}</span></div>
-        <div class="slot-cap"><b>${sl.no}. ${esc(sl.title)}</b><span>${esc(t("gen.slotEmpty", state.lang))}</span></div>
+        <div class="slot-cap"><b>${sl.no}. ${esc(sl.title)}</b><span>${esc(hint)}</span></div>
       </div>`;
     }
     const isPerson = sl.key === "person";
@@ -246,6 +267,7 @@ function renderRefs() {
   }).join("");
 
   $("#refSlots").innerHTML = html;
+  renderChannel();
   $("#refCount").textContent = refs.length
     ? t("gen.refsCount", state.lang).replace("%d", refs.length) : "";
   $("#personNote").textContent = t("gen.personNeeded", state.lang);
@@ -279,7 +301,8 @@ function autoPrompt() {
   const lines = [];
   refs.forEach((r, i) => {
     const n = i + 1;
-    if (r.role === "pose") lines.push(`Reference image ${n} is the POSE and body posture to reproduce exactly.`);
+    if (r.role === "pose-lineart") lines.push(`Reference image ${n} is the POSE and body posture to reproduce exactly.`);
+    if (r.role === "pose-depth") lines.push(`Reference image ${n} is the DEPTH structure of the same pose (white is near, black is far); keep body proportions and spatial layout.`);
     if (r.role === "costume") lines.push(`Reference image ${n} is the OUTFIT to put on the character, keep the same clothing, colors and materials.`);
     if (r.role === "person") lines.push(`Reference image ${n} is the CHARACTER: keep the same face, hairstyle and overall appearance.`);
   });
@@ -290,6 +313,7 @@ function autoPrompt() {
   if (state.sel.pose) keep.push("the pose from the pose reference");
   if (c) keep.push("the outfit from the costume reference");
   if (state.person) keep.push("the face of the person reference");
+  if (state.sel.pose && state.channel !== "line") keep.push("the depth structure of the depth reference");
   if (keep.length) {
     parts.push(`Generate a full-body character illustration that keeps ${keep.join(", ")}.`);
   } else {
@@ -433,6 +457,28 @@ function showResult(url, blob, cfg) {
   $("#regen").onclick = () => { $("#seed").value = Math.floor(Math.random() * 1e6); run(); };
 }
 
+/* ============================================================ 导出条件包 */
+function exportPack() {
+  const cfg = cfgFromUI();
+  const refs = buildReferences();
+  if (!refs.length) { alert(t("err.noSel", state.lang)); return; }
+  const { files, meta } = Pipeline.buildPack({
+    refs, prompt: cfg.prompt, negative: cfg.negativePrompt,
+    seed: cfg.seed, width: cfg.width, height: cfg.height,
+    provider: cfg.provider, model: cfg.model,
+  });
+  const zip = Zip.makeZip(files);
+  const stamp = new Date().toISOString().slice(0, 10);
+  Zip.download(zip, `conditioning-pack_${stamp}.zip`);
+  const note = $("#exportNote");
+  if (note) {
+    note.textContent = t("gen.exportDone", state.lang)
+      .replace("%n", String(refs.length))
+      .replace("%f", files.map(f => f.name).join(", "));
+  }
+  return meta;
+}
+
 /* ============================================================ 图库（IndexedDB） */
 const DB = "pcg.gallery";
 function openDB() {
@@ -569,6 +615,16 @@ function bind() {
   $("#seed").oninput = e => { state.cfg.seed = e.target.value; saveCfg(); };
   $("#reseed").onclick = () => { $("#seed").value = Math.floor(Math.random() * 1e6); };
 
+  // 姿势通道切换
+  $$("#poseChannel button").forEach(b => b.onclick = () => {
+    state.channel = b.dataset.ch;
+    localStorage.setItem("pcg.channel", state.channel);
+    renderPose(); renderRefs(); autoPrompt();
+  });
+
+  // 导出条件包
+  $("#exportPack").onclick = exportPack;
+
   // 尺寸快捷键
   $$("#sizeChips button").forEach(b => b.onclick = () => { $("#size").value = b.dataset.size; });
   $("#size").oninput = () => state.cfg.size = $("#size").value;
@@ -633,6 +689,7 @@ applyProvider();
 $("#seed").value = state.cfg.seed;
 if (state.cfg.size) $("#size").value = state.cfg.size;
 $("#negprompt").value = state.cfg.negative || DEFAULT_NEGATIVE;
+state.channel = localStorage.getItem("pcg.channel") || "both";
 setLang(state.lang);
 loadData();
 renderGallery();

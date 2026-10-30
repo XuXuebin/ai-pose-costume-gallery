@@ -189,3 +189,23 @@ textarea{resize:vertical;line-height:1.6;font-family:ui-monospace,SFMono-Regular
 .ghcount{font-style:normal;font-size:12.5px;font-weight:700;color:#aab2bf;font-variant-numeric:tabular-nums;
   padding-left:8px;margin-left:1px;border-left:1px solid rgba(255,255,255,.18)}
 .ghcount:empty{display:none}
+
+/* ---------- 姿势通道切换（线稿 / 深度图 / 双通道） ---------- */
+.seg{display:inline-flex;gap:4px;padding:3px;border-radius:10px;background:var(--panel);border:1px solid var(--line2);margin-bottom:10px}
+.seg button{border:0;background:transparent;color:var(--tx2);font-size:13.5px;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer;min-height:38px;white-space:nowrap}
+.seg button:hover{color:var(--tx);background:rgba(255,255,255,.05)}
+.seg button.on{background:var(--tx);color:#111418}
+
+/* 选中卡片里的线稿 + 深度图并排 */
+.seldual{display:flex;gap:3px;flex:0 0 auto}
+.seldual img{width:38px;height:50px;object-fit:cover;border-radius:5px;background:#e9e9e7;display:block}
+.seldual img:first-child{background:#fff}
+.seldual img:last-child{background:#3a3a3a}
+
+/* 导出条件包 */
+#exportNote{margin-top:8px}
+#exportPack{margin-top:8px}
+
+/* 未验证提示（ComfyUI 工作流模板） */
+.note.untested{color:var(--warn);background:rgba(255,184,107,.08);border:1px solid rgba(255,184,107,.28);
+  border-radius:9px;padding:8px 10px;margin-top:8px}
